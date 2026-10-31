@@ -216,9 +216,10 @@
         <button class="btn ghost" id="btn-restart" disabled>Von vorne</button>
       </div>
       <div class="panel" id="device-box" style="display:none;max-width:420px">
-        <p><b>Spotify ist auf dem Handy gerade nicht aktiv.</b></p>
-        <p class="small muted">Öffne kurz die Spotify-App, starte irgendeinen Song und pausiere ihn wieder. Dann zurück hierher und nochmal versuchen.</p>
-        <div class="row"><a class="btn" id="open-spotify" href="spotify:">Spotify öffnen</a><button class="btn ghost" id="btn-retry">Nochmal versuchen</button></div>
+        <p><b id="dev-title">Spotify ist auf dem Handy gerade nicht aktiv.</b></p>
+        <p class="small muted" id="dev-text">Tippe auf „Spotify öffnen“ und wechsle danach wieder hierher zurück – der Song startet dann automatisch.</p>
+        <div class="row"><a class="btn" id="open-spotify" href="https://open.spotify.com/" target="_blank" rel="noopener">Spotify öffnen</a><button class="btn ghost" id="btn-retry">Nochmal versuchen</button></div>
+        <p class="small muted" id="dev-samsung" style="display:none;margin-top:12px"><b>Passiert das öfter?</b> Dann lässt dein Handy Spotify im Hintergrund schlafen. Abhilfe (Samsung): Einstellungen → Apps → Spotify → Akku → „Nicht eingeschränkt“.</p>
       </div>
       <div class="row small muted" style="justify-content:center">
         <span>Automatisch stoppen nach</span>
@@ -765,7 +766,7 @@ function parseTrack(text) {
 }
 function setPlayStatus(t) { $('play-status').textContent = t; }
 function renderPlayButtons() {
-  $('btn-toggle').disabled = !player.track; $('btn-restart').disabled = !player.track;
+  $('btn-toggle').disabled = !player.track || !player.started; $('btn-restart').disabled = !player.track;
   $('btn-toggle').textContent = player.playing ? 'Pause' : 'Weiter';
   $('disc').classList.toggle('spin', player.playing);
   $('btn-scan').textContent = player.track ? 'Nächste Karte scannen' : 'Karte scannen';
@@ -783,12 +784,24 @@ async function playTrack(id) {
   $('device-box').style.display = 'none';
   setPlayStatus('Verbinde mit Spotify…');
   player.track = id; $('reveal').innerHTML = ''; $('reveal-wrap').open = false;
+  player.retryOnReturn = false; player.started = false;
   try {
     const dev = await pickDevice();
     if (!dev) { showNoDevice(); return; }
     player.deviceId = dev.id;
-    await api('PUT', `/me/player/play?device_id=${encodeURIComponent(dev.id)}`, { uris: ['spotify:track:' + id], position_ms: 0 });
-    player.playing = true;
+    // Gerät "aufwecken": Wiedergabe erst dorthin übertragen, wenn es nicht aktiv ist
+    if (!dev.is_active) { await transferTo(dev.id, false); await sleep(800); }
+    await startOn(dev.id, id);
+    setPlayStatus('Starte Song auf „' + dev.name + '“…');
+    let ok = await verifyPlaying(dev.id, id);
+    if (!ok) { // zweiter Versuch: hart übertragen + nochmal starten
+      setPlayStatus('Spotify antwortet langsam – zweiter Versuch…');
+      await transferTo(dev.id, true); await sleep(1000);
+      await startOn(dev.id, id);
+      ok = await verifyPlaying(dev.id, id);
+    }
+    if (!ok) { showNotResponding(dev); return; }
+    player.playing = true; player.started = true;
     setPlayStatus('♪ Läuft auf „' + dev.name + '“ – wann kam dieser Song raus?');
     scheduleAutoStop();
     if (navigator.vibrate) navigator.vibrate(60);
@@ -798,9 +811,37 @@ async function playTrack(id) {
     handleError(e, 'play'); setPlayStatus('Das hat nicht geklappt – nochmal scannen.');
   } finally { renderPlayButtons(); }
 }
+async function transferTo(devId, play) {
+  try { await api('PUT', '/me/player', { device_ids: [devId], play }); } catch (e) { if (e instanceof NeedLogin) throw e; }
+}
+async function startOn(devId, id) {
+  await api('PUT', `/me/player/play?device_id=${encodeURIComponent(devId)}`, { uris: ['spotify:track:' + id], position_ms: 0 });
+}
+// Prüft bis zu ~3,5 s lang, ob Spotify den Song wirklich spielt
+async function verifyPlaying(devId, id) {
+  for (let i = 0; i < 5; i++) {
+    await sleep(i === 0 ? 600 : 700);
+    let st = null;
+    try { st = await api('GET', '/me/player?additional_types=track'); } catch (e) { if (e instanceof NeedLogin) throw e; }
+    if (st && st.is_playing && st.item && st.device && st.device.id === devId &&
+        (st.item.id === id || (st.progress_ms || 0) < 15000)) return true;
+  }
+  return false;
+}
 function showNoDevice() {
   player.playing = false; renderPlayButtons();
   setPlayStatus('Kein aktives Spotify gefunden.');
+  $('dev-title').textContent = 'Spotify ist auf dem Handy gerade nicht aktiv.';
+  $('dev-samsung').style.display = 'none';
+  player.retryOnReturn = true;
+  $('device-box').style.display = 'block';
+}
+function showNotResponding(dev) {
+  player.playing = false; renderPlayButtons();
+  setPlayStatus('Spotify auf „' + dev.name + '“ reagiert gerade nicht.');
+  $('dev-title').textContent = 'Spotify schläft im Hintergrund.';
+  $('dev-samsung').style.display = 'block';
+  player.retryOnReturn = true;
   $('device-box').style.display = 'block';
 }
 function scheduleAutoStop() {
@@ -875,7 +916,11 @@ function stopScan() {
 let wakeLock = null;
 async function requestWakeLock() { try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); } } catch {} }
 function releaseWakeLock() { try { wakeLock && wakeLock.release(); } catch {} wakeLock = null; }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && currentView === 'play') requestWakeLock(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || currentView !== 'play') return;
+  requestWakeLock();
+  if (player.retryOnReturn && player.track) { player.retryOnReturn = false; setTimeout(() => playTrack(player.track), 400); }
+});
 
 /* =========================================================
    Verdrahtung & Start
@@ -913,7 +958,10 @@ function wire() {
   $('autostop').value = String(store.get('hs_autostop', 0));
   $('autostop').onchange = () => { store.set('hs_autostop', +$('autostop').value); if (player.playing) scheduleAutoStop(); };
   $('reveal-wrap').addEventListener('toggle', () => { if ($('reveal-wrap').open) reveal(); });
-  if (/android/i.test(navigator.userAgent)) $('open-spotify').href = 'intent://#Intent;package=com.spotify.music;end';
+  if (/android/i.test(navigator.userAgent)) {
+    const a = $('open-spotify'); a.removeAttribute('target');
+    a.href = 'intent://open.spotify.com/#Intent;scheme=https;package=com.spotify.music;S.browser_fallback_url=https%3A%2F%2Fopen.spotify.com%2F;end';
+  }
   $('btn-logout').onclick = () => { store.del('hs_tok'); store.del('hs_me'); toast('Abgemeldet.'); renderHome(); };
   $('btn-reset').onclick = () => { store.del('hs_tok'); store.del('hs_me'); renderSetup(); };
   window.addEventListener('hashchange', () => {
