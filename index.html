@@ -401,7 +401,7 @@ function diag(method, path, body, status, text) {
     else short = text.slice(0, 300);
   } catch {}
   const t = new Date().toTimeString().slice(0, 8);
-  diagLog.push(`${t} ${method} ${path.replace(/device_id=([^&]{6})[^&]*/, 'device_id=$1…')} ${body ? JSON.stringify(body).replace(/spotify:track:/, 't:') : ''} → ${status} ${short}`);
+  diagLog.push(`${t} ${method} ${path.replace(/device_id=([^&]{6})[^&]*/, 'device_id=$1…')} ${body ? JSON.stringify(body).replace(/spotify:track:/g, 't:').replace(/spotify:album:/, 'a:') : ''} → ${status} ${short}`);
   if (diagLog.length > 25) diagLog.shift();
   const pre = document.getElementById('diag-log'); if (pre) pre.textContent = diagLog.join('\n');
 }
@@ -505,7 +505,7 @@ async function loadPlaylist() {
         songs.push({
           id: t.id, origTitle: t.name, title, artist: joinArtists((t.artists || []).map(a => a.name)),
           mainArtist: (t.artists && t.artists[0] && t.artists[0].name) || '',
-          spYear, mbYear: null, year: spYear, isrc: t.external_ids && t.external_ids.isrc,
+          spYear, mbYear: null, year: spYear, isrc: t.external_ids && t.external_ids.isrc, albumUri: t.album && t.album.uri,
           compilation: t.album && t.album.album_type === 'compilation',
           playable: t.is_playable !== false, include: t.is_playable !== false, status: 'unchecked'
         });
@@ -810,14 +810,20 @@ async function playTrack(id) {
     if (!dev) { showNoDevice(); return; }
     player.deviceId = dev.id;
     // Gerät "aufwecken": Wiedergabe erst dorthin übertragen, wenn es nicht aktiv ist
+    player.albumUri = await albumUriFor(id);
     if (!dev.is_active) { await transferTo(dev.id, false); await sleep(800); }
-    await startOn(dev.id, id);
+    await startOn(dev.id, id, 'album');
     setPlayStatus('Starte Song auf „' + dev.name + '“…');
     let ok = await verifyPlaying(dev.id, id);
     if (!ok) { // zweiter Versuch: hart übertragen + nochmal starten
       setPlayStatus('Spotify antwortet langsam – zweiter Versuch…');
       await transferTo(dev.id, true); await sleep(1000);
-      await startOn(dev.id, id);
+      await startOn(dev.id, id, player.albumUri ? 'album' : 'uris');
+      ok = await verifyPlaying(dev.id, id);
+    }
+    if (!ok && player.albumUri) { // dritter Versuch: einfache Variante
+      setPlayStatus('Dritter Versuch…');
+      await startOn(dev.id, id, 'uris');
       ok = await verifyPlaying(dev.id, id);
     }
     if (!ok) { showNotResponding(dev); return; }
@@ -834,8 +840,22 @@ async function playTrack(id) {
 async function transferTo(devId, play) {
   try { await api('PUT', '/me/player', { device_ids: [devId], play }); } catch (e) { if (e instanceof NeedLogin) throw e; }
 }
-async function startOn(devId, id) {
-  await api('PUT', `/me/player/play?device_id=${encodeURIComponent(devId)}`, { uris: ['spotify:track:' + id], position_ms: 0 });
+// Album des Songs herausfinden (aus der Kartenliste oder per Spotify-Abfrage)
+async function albumUriFor(id) {
+  const set = getSet(); const s = set && set.songs.find(x => x.id === id);
+  if (s && s.albumUri) return s.albumUri;
+  try { const t = await api('GET', '/tracks/' + id); return t && t.album && t.album.uri; }
+  catch (e) { if (e instanceof NeedLogin) throw e; return null; }
+}
+// Song starten. Variante "album": Album als Kontext + Song als Startpunkt.
+// (Workaround: seit Okt. 2026 startet Spotify auf Android-Handys einzelne Songs über "uris" oft nicht.)
+async function startOn(devId, id, mode) {
+  const url = `/me/player/play?device_id=${encodeURIComponent(devId)}`;
+  if (mode === 'album' && player.albumUri) {
+    try { await api('PUT', url, { context_uri: player.albumUri, offset: { uri: 'spotify:track:' + id }, position_ms: 0 }); return; }
+    catch (e) { if (e instanceof NeedLogin || e.reason === 'NO_ACTIVE_DEVICE') throw e; /* sonst: einfache Variante probieren */ }
+  }
+  await api('PUT', url, { uris: ['spotify:track:' + id], position_ms: 0 });
 }
 // Prüft bis zu ~3,5 s lang, ob Spotify den Song wirklich spielt
 async function verifyPlaying(devId, id) {
