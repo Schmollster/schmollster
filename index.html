@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#120d1f">
+<title>Schmollster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#120d1f; --bg2:#1b1430; --card:#221a3b; --line:#35295a;
+    --text:#f4f0ff; --muted:#a99fc8; --pink:#ff3d8b; --cyan:#2ee6d6; --yellow:#ffd23f;
+    --warn:#ffb020; --bad:#ff5a5a; --ok:#3ddc84;
+    --radius:16px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+  body{min-height:100dvh;background:radial-gradient(1200px 600px at 80% -10%,#3a1450 0,transparent 60%),radial-gradient(900px 500px at -10% 110%,#0d3a45 0,transparent 55%),var(--bg);background-attachment:fixed}
+  h1,h2,h3,.brand,.year-big{font-family:"Bricolage Grotesque",Inter,system-ui,sans-serif}
+  a{color:var(--cyan)}
+  .top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(var(--bg),rgba(18,13,31,.85));backdrop-filter:blur(6px)}
+  .brand{font-weight:800;font-size:22px;letter-spacing:.04em;cursor:pointer;user-select:none}
+  .brand span{background:linear-gradient(90deg,var(--pink),var(--yellow));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .icon{background:none;border:1px solid var(--line);color:var(--text);width:40px;height:40px;border-radius:12px;font-size:18px;cursor:pointer}
+  .icon[hidden]{visibility:hidden;display:block}
+  main{max-width:960px;margin:0 auto;padding:8px 16px 48px}
+  .view{display:none}
+  .view.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  h1{font-size:34px;line-height:1.1;margin:12px 0 8px}
+  h2{font-size:24px;margin:24px 0 8px}
+  p{margin:8px 0}
+  .muted{color:var(--muted)}
+  .small{font-size:14px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin:12px 0}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:14px 20px;font:600 16px Inter,sans-serif;color:#120d1f;background:var(--cyan);cursor:pointer;text-decoration:none;min-height:48px}
+  .btn.pink{background:var(--pink);color:#fff}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .btn.big{width:100%;padding:20px;font-size:19px;border-radius:18px}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  input[type=text],input[type=url],select{width:100%;background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:16px Inter,sans-serif}
+  input:focus,select:focus{outline:2px solid var(--cyan);outline-offset:1px}
+  label.chk{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  label.chk input{width:20px;height:20px;margin-top:2px;accent-color:var(--pink)}
+  ol.steps{padding-left:0;list-style:none;counter-reset:s;margin:0}
+  ol.steps>li{counter-increment:s;position:relative;padding:4px 0 16px 44px}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:2px;width:30px;height:30px;border-radius:50%;background:var(--pink);color:#fff;font-weight:700;display:grid;place-items:center;font-size:15px}
+  code.copy{display:block;background:var(--bg2);border:1px dashed var(--cyan);border-radius:10px;padding:10px 12px;margin:6px 0;word-break:break-all;cursor:pointer;font-size:14px}
+  code.copy::after{content:"  ⧉ antippen zum Kopieren";color:var(--muted);font-family:Inter,sans-serif;font-size:12px}
+  .home-grid{display:grid;gap:14px;margin-top:20px}
+  .tile{display:block;text-align:left;border:1px solid var(--line);border-radius:22px;padding:22px;cursor:pointer;color:var(--text);font:inherit;position:relative;overflow:hidden}
+  .tile h2{margin:0 0 4px;font-size:28px}
+  .tile.play{background:linear-gradient(135deg,#ff3d8b 0,#8b2bff 100%);border:0}
+  .tile.make{background:linear-gradient(135deg,#1fb8ad 0,#1c4d8f 100%);border:0}
+  .tile p{margin:0;opacity:.9}
+  .tile .glyph{position:absolute;right:-10px;bottom:-24px;font-size:110px;opacity:.18;line-height:1}
+  .progress{height:10px;background:var(--bg2);border-radius:99px;overflow:hidden;margin:10px 0}
+  .progress>div{height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--pink));transition:width .2s}
+  /* review list */
+  .toolbar{position:sticky;top:64px;z-index:4;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line)}
+  .songs{margin-top:8px}
+  .song{display:grid;grid-template-columns:28px 76px 1fr 1fr;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .song input[type=text]{padding:8px 10px;font-size:15px}
+  .song .y{font-weight:700;text-align:center}
+  .song .info{grid-column:2/-1;font-size:13px;color:var(--muted);margin-top:-2px}
+  .song.changed .y{border-color:var(--warn);color:var(--warn)}
+  .song.check .y{border-color:var(--bad)}
+  .song.off{opacity:.4}
+  .badge{display:inline-block;padding:1px 8px;border-radius:99px;font-size:12px;font-weight:600;margin-right:6px}
+  .b-warn{background:rgba(255,176,32,.18);color:var(--warn)}
+  .b-bad{background:rgba(255,90,90,.18);color:var(--bad)}
+  .b-ok{background:rgba(61,220,132,.15);color:var(--ok)}
+  @media (max-width:640px){
+    .song{grid-template-columns:28px 70px 1fr}
+    .song .t{grid-column:3}
+    .song .a{grid-column:3}
+    .song .y{grid-row:span 2}
+    .song .info{grid-column:2/-1}
+  }
+  /* player */
+  .stage{display:flex;flex-direction:column;align-items:center;gap:18px;margin-top:10px}
+  .disc{width:min(70vw,300px);aspect-ratio:1;border-radius:50%;background:repeating-radial-gradient(circle,#1a1a1a 0 2px,#111 2px 4px);position:relative;box-shadow:0 20px 60px rgba(255,61,139,.25),inset 0 0 0 2px #2a2a2a}
+  .disc::after{content:"";position:absolute;inset:34%;border-radius:50%;background:conic-gradient(var(--pink),var(--yellow),var(--cyan),var(--pink))}
+  .disc::before{content:"";position:absolute;inset:47%;border-radius:50%;background:var(--bg);z-index:2}
+  .disc.spin{animation:spin 2.4s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .status{min-height:48px;text-align:center;font-weight:500}
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px}
+  .controls .btn{width:100%}
+  .controls .wide{grid-column:1/-1}
+  .scanner{position:fixed;inset:0;z-index:20;background:#000;display:none;flex-direction:column}
+  .scanner.on{display:flex}
+  .scanner video{flex:1;width:100%;object-fit:cover}
+  .scanner .frame{position:absolute;left:50%;top:45%;width:min(70vw,320px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:24px;box-shadow:0 0 0 100vmax rgba(0,0,0,.45);border:3px solid var(--cyan)}
+  .scanner .bar{position:absolute;left:0;right:0;bottom:0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px;background:linear-gradient(transparent,rgba(0,0,0,.8))}
+  .scanner .hint{text-align:center;color:#fff;font-weight:600}
+  .reveal{text-align:center}
+  .reveal .year-big{font-size:56px;font-weight:800;line-height:1;color:var(--yellow)}
+  .qrbox{background:#fff;border-radius:16px;padding:12px;width:220px;margin:8px 0}
+  .qrbox svg{width:100%;height:auto;display:block}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:#fff;color:#120d1f;padding:12px 18px;border-radius:12px;font-weight:600;z-index:30;transition:transform .25s;max-width:calc(100vw - 32px);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  #toast.on{transform:translateX(-50%) translateY(0)}
+  .err{color:var(--bad)}
+  details summary{cursor:pointer;color:var(--cyan)}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="icon" id="btn-back" aria-label="Zurück" hidden>←</button>
+  <div class="brand" id="brand">SCHMOLL<span>STER</span></div>
+  <button class="icon" id="btn-settings" aria-label="Einstellungen" hidden>⚙</button>
+</header>
+
+<main>
+  <!-- ============ EINRICHTUNG ============ -->
+  <section class="view" id="v-setup">
+    <h1>Einmalige Einrichtung</h1>
+    <p class="muted">Damit diese Seite Songs auf deinem Spotify abspielen und deine Playlists lesen darf, brauchst du eine eigene, kostenlose „Spotify App“. Das dauert etwa 5 Minuten und musst du nur einmal machen.</p>
+    <div class="panel">
+      <ol class="steps">
+        <li>Öffne <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener">developer.spotify.com/dashboard</a> und melde dich mit deinem Spotify-Konto an. Beim ersten Mal musst du die Nutzungsbedingungen bestätigen.</li>
+        <li>Klicke auf <b>„Create app“</b> und fülle aus:
+          <ul class="small">
+            <li><b>App name:</b> Schmollster</li>
+            <li><b>App description:</b> Musikquiz mit eigenen Karten</li>
+            <li><b>Redirect URI:</b> genau diese Adresse einfügen und auf „Add“ klicken:
+              <code class="copy" id="redirect-uri"></code></li>
+            <li><b>Which API/SDKs are you planning to use?</b> Haken bei <b>„Web API“</b></li>
+          </ul>
+          Dann den Bedingungen zustimmen und auf <b>„Save“</b> klicken.</li>
+        <li>In der App auf <b>„Settings“</b> → Reiter <b>„User Management“</b>: deinen Namen und die E-Mail-Adresse deines Spotify-Kontos eintragen und speichern.</li>
+        <li>Unter <b>„Basic Information“</b> steht die <b>Client ID</b> (lange Buchstaben-Zahlen-Kette). Kopiere sie hier hinein:
+          <input type="text" id="cid-input" placeholder="z. B. 3f8a1c…" autocomplete="off" spellcheck="false" style="margin-top:8px">
+        </li>
+      </ol>
+      <button class="btn pink big" id="btn-save-cid">Speichern &amp; mit Spotify anmelden</button>
+      <p class="small muted" id="setup-note"></p>
+    </div>
+  </section>
+
+  <!-- ============ START ============ -->
+  <section class="view" id="v-home">
+    <h1 id="hello">Bereit für eine Runde?</h1>
+    <p class="muted" id="login-state"></p>
+    <div class="home-grid">
+      <button class="tile play" id="go-play"><h2>Spielen</h2><p>Karte scannen – Song läuft auf deinem Spotify, ohne Titel zu verraten.</p><span class="glyph">▶</span></button>
+      <button class="tile make" id="go-create"><h2>Karten erstellen</h2><p>Playlist-Link einfügen, Liste prüfen, Druckbogen als PDF.</p><span class="glyph">▦</span></button>
+    </div>
+    <div id="login-box" class="panel" style="display:none">
+      <p>Du bist noch nicht bei Spotify angemeldet.</p>
+      <button class="btn pink" id="btn-login">Mit Spotify anmelden</button>
+    </div>
+  </section>
+
+  <!-- ============ KARTEN ERSTELLEN ============ -->
+  <section class="view" id="v-create">
+    <h1>Karten erstellen</h1>
+    <div class="panel" id="resume-box" style="display:none">
+      <p>Du hast schon eine Liste vorbereitet: <b id="resume-name"></b></p>
+      <div class="row"><button class="btn" id="btn-resume">Weiter bearbeiten</button></div>
+    </div>
+    <div class="panel">
+      <p><b>Link zu deiner Spotify-Playlist</b></p>
+      <p class="small muted">In Spotify bei der Playlist auf „⋯“ → „Teilen“ → „Link kopieren“. Wichtig: Es muss <b>deine eigene</b> Playlist sein (oder eine, bei der du Mitbearbeiter bist) – fertige Playlists von Spotify gehen nicht.</p>
+      <input type="url" id="pl-input" placeholder="https://open.spotify.com/playlist/…" autocomplete="off" spellcheck="false">
+      <label class="chk small" style="margin:12px 0"><input type="checkbox" id="mb-check" checked><span><b>Erscheinungsjahre prüfen (empfohlen).</b> Spotify zeigt oft das Jahr eines Remasters oder einer Best-of-CD statt des Originaljahres. Die App gleicht deshalb mit der freien Musikdatenbank MusicBrainz ab. Dauert ca. 1 Sekunde pro Song.</span></label>
+      <button class="btn pink big" id="btn-load">Playlist laden</button>
+    </div>
+    <div class="panel" id="load-box" style="display:none">
+      <p id="load-text">Lade…</p>
+      <div class="progress"><div id="load-bar"></div></div>
+      <button class="btn ghost" id="btn-skip-mb" style="display:none">Prüfung überspringen</button>
+    </div>
+  </section>
+
+  <!-- ============ LISTE PRÜFEN ============ -->
+  <section class="view" id="v-review">
+    <h1 id="rv-title">Liste prüfen</h1>
+    <p class="muted small">Was auf den Karten steht, kannst du hier direkt ändern. <span class="badge b-warn">Jahr korrigiert</span> heißt: Spotify hatte ein späteres Jahr, die Datenbank kennt ein früheres. <span class="badge b-bad">prüfen</span> heißt: nicht gefunden oder Compilation – kurz googeln lohnt sich.</p>
+    <div class="toolbar">
+      <div class="row">
+        <label class="chk small"><input type="checkbox" id="only-flagged"><span>Nur markierte zeigen</span></label>
+        <span class="small muted" id="rv-count"></span>
+      </div>
+    </div>
+    <div class="songs" id="songs"></div>
+    <div class="panel">
+      <h2 style="margin-top:0">Druckbogen</h2>
+      <p class="small muted">Name der Edition (steht klein auf der Rückseite):</p>
+      <input type="text" id="edition" maxlength="40">
+      <p class="small muted" style="margin-top:12px">Druckstil:</p>
+      <select id="style">
+        <option value="color">Farbig (Farbe je Jahrzehnt)</option>
+        <option value="eco">Tintensparend (weiß mit Farbrahmen)</option>
+      </select>
+      <div class="row" style="margin-top:14px">
+        <button class="btn pink" id="btn-pdf">PDF erstellen</button>
+        <button class="btn ghost" id="btn-csv">Liste als CSV speichern</button>
+      </div>
+      <p class="small muted" style="margin-top:12px"><b>Drucken:</b> beidseitig, „an langer Kante spiegeln“, Größe „100 %“ bzw. „Tatsächliche Größe“ (nicht „An Seite anpassen“). Jede Karte ist 6,5 × 6,5 cm, 12 pro Blatt. Dickeres Papier (ab 160 g/m²) fühlt sich am besten an.</p>
+      <p class="small err" id="pdf-err"></p>
+    </div>
+  </section>
+
+  <!-- ============ SPIELEN ============ -->
+  <section class="view" id="v-play">
+    <div class="stage">
+      <div class="disc" id="disc"></div>
+      <div class="status" id="play-status">Scanne die Rückseite einer Karte.</div>
+      <div class="controls" id="controls">
+        <button class="btn pink big wide" id="btn-scan">Karte scannen</button>
+        <button class="btn ghost" id="btn-toggle" disabled>Pause</button>
+        <button class="btn ghost" id="btn-restart" disabled>Von vorne</button>
+      </div>
+      <div class="panel" id="device-box" style="display:none;max-width:420px">
+        <p><b>Spotify ist auf dem Handy gerade nicht aktiv.</b></p>
+        <p class="small muted">Öffne kurz die Spotify-App, starte irgendeinen Song und pausiere ihn wieder. Dann zurück hierher und nochmal versuchen.</p>
+        <div class="row"><a class="btn" id="open-spotify" href="spotify:">Spotify öffnen</a><button class="btn ghost" id="btn-retry">Nochmal versuchen</button></div>
+      </div>
+      <div class="row small muted" style="justify-content:center">
+        <span>Automatisch stoppen nach</span>
+        <select id="autostop" style="width:auto;padding:6px 10px">
+          <option value="0">nie</option><option value="30">30 s</option><option value="45">45 s</option><option value="60">60 s</option><option value="90">90 s</option>
+        </select>
+      </div>
+      <details class="small" id="reveal-wrap" style="display:none">
+        <summary>Lösung anzeigen (falls die Karte weg ist)</summary>
+        <div class="reveal" id="reveal"></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ============ EINSTELLUNGEN ============ -->
+  <section class="view" id="v-settings">
+    <h1>Einstellungen</h1>
+    <div class="panel">
+      <h2 style="margin-top:0">Handy einrichten</h2>
+      <p class="small muted">Scanne diesen Code mit der Handykamera. Dann ist die Seite auf dem Handy direkt eingerichtet, und du musst dich dort nur noch bei Spotify anmelden. Tipp: Danach im Chrome-Menü „Zum Startbildschirm hinzufügen“ wählen.</p>
+      <div class="qrbox" id="setup-qr"></div>
+    </div>
+    <div class="panel">
+      <p class="small">Angemeldet als: <b id="set-user">–</b></p>
+      <p class="small muted">Client ID: <span id="set-cid"></span></p>
+      <div class="row">
+        <button class="btn ghost" id="btn-logout">Bei Spotify abmelden</button>
+        <button class="btn ghost" id="btn-reset">Client ID ändern</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="scanner" id="scanner">
+  <video id="video" playsinline muted></video>
+  <div class="frame"></div>
+  <div class="bar">
+    <div class="hint" id="scan-hint">QR-Code in den Rahmen halten</div>
+    <button class="btn ghost" id="btn-scan-cancel" style="background:rgba(0,0,0,.5);color:#fff">Abbrechen</button>
+  </div>
+</div>
+<canvas id="scan-canvas" style="display:none"></canvas>
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   Schmollster – eigene Hitster-Karten aus einer Spotify-Playlist
+   ========================================================= */
+const CDN = {
+  jspdf:  'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+  qrcode: 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js',
+  jsqr:   'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'
+};
+const SCOPES = 'playlist-read-private playlist-read-collaborative user-read-playback-state user-modify-playback-state';
+const APP_URL = location.origin + location.pathname.replace(/index\.html$/, '');
+const $ = id => document.getElementById(id);
+
+/* ---------- kleine Helfer ---------- */
+const store = {
+  get(k, d = null) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let toastTimer;
+function toast(msg, ms = 2600) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), ms);
+}
+const scriptCache = {};
+function loadScript(src) {
+  if (!scriptCache[src]) scriptCache[src] = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res;
+    s.onerror = () => { delete scriptCache[src]; rej(new Error('Konnte Bibliothek nicht laden – Internetverbindung prüfen.')); };
+    document.head.appendChild(s);
+  });
+  return scriptCache[src];
+}
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); toast('Kopiert ✓'); }
+  catch { prompt('Zum Kopieren markieren:', t); }
+}
+
+/* ---------- Ansichten ---------- */
+let currentView = null;
+const backTarget = { create: 'home', review: 'create', play: 'home', settings: 'home' };
+function show(view) {
+  if (currentView === 'play' && view !== 'play') releaseWakeLock();
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + view));
+  currentView = view;
+  $('btn-back').hidden = !backTarget[view];
+  $('btn-settings').hidden = view === 'setup' || view === 'settings';
+  window.scrollTo(0, 0);
+  if (view === 'play') requestWakeLock();
+}
+
+/* =========================================================
+   Spotify-Anmeldung (Authorization Code mit PKCE, ohne Server)
+   ========================================================= */
+function clientId() { return store.get('hs_cid', ''); }
+function randomString(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const a = crypto.getRandomValues(new Uint8Array(len));
+  return Array.from(a, b => chars[b % chars.length]).join('');
+}
+async function sha256b64url(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function login(returnTo) {
+  const verifier = randomString(64), state = randomString(16);
+  store.set('hs_pkce', { verifier, state, returnTo: returnTo || currentView || 'home' });
+  const p = new URLSearchParams({
+    response_type: 'code', client_id: clientId(), scope: SCOPES, redirect_uri: APP_URL,
+    code_challenge_method: 'S256', code_challenge: await sha256b64url(verifier), state
+  });
+  location.href = 'https://accounts.spotify.com/authorize?' + p;
+}
+async function tokenRequest(body) {
+  const r = await fetch('https://accounts.spotify.com/api/token', {
+    method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(body)
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error_description || j.error || 'Anmeldung fehlgeschlagen'); e.status = r.status; throw e; }
+  const old = store.get('hs_tok', {});
+  const tok = { access: j.access_token, refresh: j.refresh_token || old.refresh, exp: Date.now() + (j.expires_in - 60) * 1000 };
+  store.set('hs_tok', tok);
+  return tok;
+}
+async function exchangeCode(code, state) {
+  const pk = store.get('hs_pkce');
+  if (!pk || pk.state !== state) throw new Error('Anmeldung abgelaufen – bitte nochmal versuchen.');
+  store.del('hs_pkce');
+  await tokenRequest({ grant_type: 'authorization_code', code, redirect_uri: APP_URL, client_id: clientId(), code_verifier: pk.verifier });
+  return pk.returnTo;
+}
+function loggedIn() { return !!store.get('hs_tok', {}).refresh; }
+class NeedLogin extends Error {}
+async function accessToken(force) {
+  const tok = store.get('hs_tok');
+  if (!tok || !tok.refresh) throw new NeedLogin('Nicht angemeldet');
+  if (!force && tok.access && Date.now() < tok.exp) return tok.access;
+  try { return (await tokenRequest({ grant_type: 'refresh_token', refresh_token: tok.refresh, client_id: clientId() })).access; }
+  catch (e) { if (e.status === 400 || e.status === 401) { store.del('hs_tok'); throw new NeedLogin('Anmeldung abgelaufen'); } throw e; }
+}
+async function api(method, path, body, attempt = 0) {
+  const token = await accessToken(attempt > 0 && api._lastWas401);
+  const r = await fetch('https://api.spotify.com/v1' + path, {
+    method, headers: { Authorization: 'Bearer ' + token, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  api._lastWas401 = r.status === 401;
+  if (r.status === 401 && attempt < 1) return api(method, path, body, attempt + 1);
+  if (r.status === 429 && attempt < 4) { await sleep((+r.headers.get('Retry-After') || 2) * 1000); return api(method, path, body, attempt + 1); }
+  if (r.status === 204 || r.status === 202) return null;
+  const text = await r.text();
+  let j = null; try { j = text ? JSON.parse(text) : null; } catch {}
+  if (!r.ok) {
+    const e = new Error((j && j.error && (j.error.message || j.error)) || ('Spotify-Fehler ' + r.status));
+    e.status = r.status; e.reason = j && j.error && j.error.reason; throw e;
+  }
+  return j;
+}
+function handleError(e, where) {
+  console.error(e);
+  if (e instanceof NeedLogin) { toast('Bitte (neu) bei Spotify anmelden.'); login(where); return; }
+  toast(e.message || String(e), 4500);
+}
+
+/* =========================================================
+   Einrichtung & Start
+   ========================================================= */
+function renderSetup() {
+  $('redirect-uri').textContent = APP_URL;
+  $('cid-input').value = clientId();
+  const note = [];
+  if (location.protocol !== 'https:' && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname))
+    note.push('⚠ Die Seite läuft nicht über https – Spotify-Anmeldung und Kamera funktionieren dann nicht.');
+  if (/^http:\/\/localhost/.test(APP_URL)) note.push('Hinweis: Spotify akzeptiert für lokale Tests nur http://127.0.0.1, nicht „localhost“.');
+  $('setup-note').textContent = note.join(' ');
+  show('setup');
+}
+async function renderHome() {
+  show('home');
+  const box = $('login-box');
+  if (!loggedIn()) { box.style.display = 'block'; $('login-state').textContent = ''; return; }
+  box.style.display = 'none';
+  try {
+    const me = store.get('hs_me') || await api('GET', '/me');
+    store.set('hs_me', { display_name: me.display_name, id: me.id });
+    $('hello').textContent = 'Hey ' + (me.display_name || '').split(' ')[0] + ', bereit für eine Runde?';
+  } catch (e) { if (e instanceof NeedLogin) { box.style.display = 'block'; } }
+}
+function renderSettings() {
+  show('settings');
+  const me = store.get('hs_me');
+  $('set-user').textContent = loggedIn() ? (me && me.display_name) || 'ja' : 'nicht angemeldet';
+  $('set-cid').textContent = clientId();
+  loadScript(CDN.qrcode).then(() => {
+    const qr = qrcode(0, 'M'); qr.addData(APP_URL + '#cid=' + clientId()); qr.make();
+    $('setup-qr').innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+  }).catch(e => $('setup-qr').textContent = e.message);
+}
+
+/* =========================================================
+   Karten erstellen: Playlist laden, Titel säubern, Jahre prüfen
+   ========================================================= */
+function parsePlaylistId(s) {
+  s = (s || '').trim();
+  const m = s.match(/playlist[/:]([A-Za-z0-9]{22})/);
+  if (m) return m[1];
+  if (/^[A-Za-z0-9]{22}$/.test(s)) return s;
+  return null;
+}
+const CLEAN_KW = /(remaster|version|edit\b|mono|stereo|mix\b|single|bonus|deluxe|anniversary|from\s|aus\s|soundtrack|re-?recorded|taylor's)/i;
+function cleanTitle(t) {
+  let s = t;
+  s = s.replace(/\s+-\s+.*$/, m => CLEAN_KW.test(m) ? '' : m);
+  s = s.replace(/\s*[\(\[]([^\)\]]*)[\)\]]/g, (m, inner) => (CLEAN_KW.test(inner) || /^(feat|ft|with|mit)\b\.?/i.test(inner.trim())) ? '' : m);
+  s = s.replace(/\s+(feat|ft)\.?\s.*$/i, '');
+  return s.trim() || t;
+}
+function joinArtists(list) {
+  const n = list.filter(Boolean).slice(0, 3);
+  return n.length <= 1 ? (n[0] || '') : n.slice(0, -1).join(', ') + ' & ' + n[n.length - 1];
+}
+function norm(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s*[\(\[].*?[\)\]]/g, '').replace(/\s+-\s+.*$/, '').replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '');
+}
+
+let loadAbort = false, skipMb = false;
+async function loadPlaylist() {
+  const id = parsePlaylistId($('pl-input').value);
+  if (!id) { toast('Das sieht nicht nach einem Playlist-Link aus.'); return; }
+  if (!loggedIn()) { store.set('hs_pending_pl', $('pl-input').value); return login('create'); }
+  const btn = $('btn-load'); btn.disabled = true;
+  const box = $('load-box'); box.style.display = 'block';
+  const setP = (txt, frac) => { $('load-text').textContent = txt; $('load-bar').style.width = Math.round(frac * 100) + '%'; };
+  loadAbort = false; skipMb = false;
+  try {
+    setP('Lade Playlist…', 0.02);
+    let meta = {};
+    try { meta = await api('GET', `/playlists/${id}?fields=name,owner(display_name)`); } catch (e) { if (e instanceof NeedLogin) throw e; }
+    const songs = []; let skipped = 0;
+    let url = `/playlists/${id}/items?limit=50&offset=0&market=from_token&additional_types=track`;
+    let total = 0;
+    while (url) {
+      let page;
+      try { page = await api('GET', url); }
+      catch (e) {
+        if (e.status === 403 || e.status === 404) throw new Error('Auf diese Playlist hast du keinen Zugriff. Es muss deine eigene Playlist sein (oder du bist Mitbearbeiter). Tipp: Songs einfach in eine neue, eigene Playlist kopieren.');
+        throw e;
+      }
+      total = page.total || total;
+      for (const entry of page.items || []) {
+        const t = entry.item || entry.track;
+        if (!t || t.type !== 'track' || t.is_local || !t.id) { skipped++; continue; }
+        const spYear = parseInt((t.album && t.album.release_date) || '', 10) || null;
+        const title = cleanTitle(t.name);
+        songs.push({
+          id: t.id, origTitle: t.name, title, artist: joinArtists((t.artists || []).map(a => a.name)),
+          mainArtist: (t.artists && t.artists[0] && t.artists[0].name) || '',
+          spYear, mbYear: null, year: spYear, isrc: t.external_ids && t.external_ids.isrc,
+          compilation: t.album && t.album.album_type === 'compilation',
+          playable: t.is_playable !== false, include: t.is_playable !== false, status: 'unchecked'
+        });
+      }
+      setP(`Lade Songs… ${songs.length}${total ? ' / ' + total : ''}`, 0.05 + 0.15 * (total ? songs.length / total : 0.5));
+      url = page.next ? page.next.replace('https://api.spotify.com/v1', '') : null;
+    }
+    if (!songs.length) throw new Error('In der Playlist wurden keine Songs gefunden. Ist es wirklich deine eigene Playlist?');
+    const set = { playlistId: id, name: meta.name || 'Meine Playlist', edition: meta.name || 'Schmollster', songs, style: 'color' };
+    store.set('hs_set', set);
+
+    if ($('mb-check').checked) {
+      $('btn-skip-mb').style.display = 'inline-flex';
+      for (let i = 0; i < songs.length; i++) {
+        if (skipMb || loadAbort) break;
+        const s = songs[i];
+        const left = Math.ceil((songs.length - i) * 1.15);
+        setP(`Prüfe Erscheinungsjahre… ${i + 1} / ${songs.length} (noch ca. ${left > 90 ? Math.round(left / 60) + ' min' : left + ' s'})`, 0.2 + 0.8 * (i / songs.length));
+        try { s.mbYear = await mbYear(s); s.status = 'checked'; } catch { s.status = 'unchecked'; }
+        applyYear(s);
+        if (i % 10 === 9) store.set('hs_set', set);
+      }
+      $('btn-skip-mb').style.display = 'none';
+    }
+    songs.forEach(applyYear);
+    store.set('hs_set', set);
+    setP('Fertig!', 1);
+    if (skipped) toast(`${skipped} Einträge übersprungen (Podcasts oder lokale Dateien).`);
+    renderReview();
+  } catch (e) { handleError(e, 'create'); }
+  finally { btn.disabled = false; setTimeout(() => box.style.display = 'none', 600); }
+}
+function applyYear(s) {
+  if (s.mbYear && s.spYear && s.mbYear < s.spYear) { s.year = s.mbYear; s.flag = 'changed'; }
+  else if (!s.spYear && s.mbYear) { s.year = s.mbYear; s.flag = 'changed'; }
+  else { s.year = s.year || s.spYear; s.flag = (s.status === 'checked' && !s.mbYear) || (s.compilation && !s.mbYear) ? 'check' : (s.status === 'checked' ? 'ok' : 'none'); }
+  if (!s.year) s.flag = 'check';
+}
+
+/* MusicBrainz: frühestes Erscheinungsjahr der Aufnahme (max. 1 Anfrage/Sekunde) */
+let mbLast = 0;
+async function mbFetch(query) {
+  const wait = mbLast + 1100 - Date.now(); if (wait > 0) await sleep(wait);
+  mbLast = Date.now();
+  const r = await fetch('https://musicbrainz.org/ws/2/recording?fmt=json&limit=25&query=' + encodeURIComponent(query), { headers: { Accept: 'application/json' } });
+  if (r.status === 503) { await sleep(2500); mbLast = Date.now(); return mbFetch(query); }
+  if (!r.ok) throw new Error('MusicBrainz ' + r.status);
+  return r.json();
+}
+function luceneEsc(s) { return s.replace(/([+\-&|!(){}\[\]^"~*?:\\\/])/g, '\\$1'); }
+async function mbYear(s) {
+  const nt = norm(s.title), na = norm(s.mainArtist);
+  const pick = (data, strict) => {
+    let best = null;
+    for (const r of (data.recordings || [])) {
+      if ((r.score || 0) < 70) continue;
+      const rt = norm(r.title);
+      if (strict && !(rt === nt || (rt.length > 3 && (rt.startsWith(nt) || nt.startsWith(rt))))) continue;
+      const credit = norm((r['artist-credit'] || []).map(c => (c.name || '') + (c.joinphrase || '')).join(''));
+      if (strict && !(credit.includes(na) || na.includes(credit))) continue;
+      const y = parseInt(r['first-release-date'] || '', 10);
+      if (y >= 1900 && (!best || y < best)) best = y;
+    }
+    return best;
+  };
+  const q = `recording:"${luceneEsc(s.title)}" AND artist:"${luceneEsc(s.mainArtist)}"`;
+  let y = pick(await mbFetch(q), true);
+  if (!y && s.isrc) y = pick(await mbFetch('isrc:' + s.isrc), false);
+  return y;
+}
+
+/* ---------- Liste prüfen ---------- */
+function getSet() { return store.get('hs_set'); }
+function saveSet(set) { store.set('hs_set', set); }
+function renderReview() {
+  const set = getSet(); if (!set) return show('create');
+  show('review');
+  $('rv-title').textContent = set.name;
+  $('edition').value = set.edition || set.name;
+  $('style').value = set.style || 'color';
+  drawSongs();
+}
+function drawSongs() {
+  const set = getSet(); const only = $('only-flagged').checked;
+  const html = [];
+  set.songs.forEach((s, i) => {
+    const flagged = s.flag === 'changed' || s.flag === 'check' || !s.playable;
+    if (only && !flagged) return;
+    let info = '';
+    if (!s.playable) info += '<span class="badge b-bad">in deinem Land nicht abspielbar</span>';
+    if (s.flag === 'changed') info += `<span class="badge b-warn">Jahr korrigiert</span>Spotify: ${s.spYear || '–'} → Datenbank: ${s.mbYear}`;
+    else if (s.flag === 'check') info += `<span class="badge b-bad">prüfen</span>${s.compilation ? 'Stammt von einer Compilation. ' : ''}${s.status === 'checked' ? 'In der Datenbank nicht gefunden.' : ''}`;
+    else if (s.flag === 'ok') info += '<span class="badge b-ok">✓ geprüft</span>';
+    if (s.origTitle !== s.title) info += ` <span title="Originaltitel">Spotify-Titel: ${esc(s.origTitle)}</span>`;
+    const cls = ['song', s.flag === 'changed' ? 'changed' : '', s.flag === 'check' ? 'check' : '', s.include ? '' : 'off'].join(' ');
+    html.push(`<div class="${cls}" data-i="${i}">
+      <input type="checkbox" data-f="include" ${s.include ? 'checked' : ''} title="Karte drucken" style="width:20px;height:20px;accent-color:var(--pink)">
+      <input type="text" class="y" data-f="year" value="${esc(s.year || '')}" inputmode="numeric" maxlength="4" aria-label="Jahr">
+      <input type="text" class="a" data-f="artist" value="${esc(s.artist)}" aria-label="Interpret">
+      <input type="text" class="t" data-f="title" value="${esc(s.title)}" aria-label="Titel">
+      ${info ? `<div class="info">${info}</div>` : ''}
+    </div>`);
+  });
+  $('songs').innerHTML = html.join('') || '<p class="muted">Keine markierten Songs – alles sieht gut aus.</p>';
+  const inc = set.songs.filter(s => s.include).length;
+  const flagged = set.songs.filter(s => s.flag === 'changed' || s.flag === 'check').length;
+  $('rv-count').textContent = `${inc} Karten · ${Math.ceil(inc / 12)} Blatt (beidseitig) · ${flagged} markiert`;
+}
+function onSongEdit(e) {
+  const row = e.target.closest('.song'); if (!row) return;
+  const f = e.target.dataset.f; if (!f) return;
+  const set = getSet(); const s = set.songs[+row.dataset.i];
+  if (f === 'include') { s.include = e.target.checked; row.classList.toggle('off', !s.include); }
+  else if (f === 'year') { const y = parseInt(e.target.value, 10); s.year = y || null; }
+  else s[f] = e.target.value;
+  saveSet(set);
+  if (f === 'include') drawSongsCountOnly(set);
+}
+function drawSongsCountOnly(set) {
+  const inc = set.songs.filter(s => s.include).length;
+  const flagged = set.songs.filter(s => s.flag === 'changed' || s.flag === 'check').length;
+  $('rv-count').textContent = `${inc} Karten · ${Math.ceil(inc / 12)} Blatt (beidseitig) · ${flagged} markiert`;
+}
+function exportCsv() {
+  const set = getSet();
+  const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const lines = [['Drucken', 'Jahr', 'Interpret', 'Titel', 'Spotify-Jahr', 'Datenbank-Jahr', 'Spotify-ID'].map(q).join(';')];
+  set.songs.forEach(s => lines.push([s.include ? 'ja' : 'nein', s.year, s.artist, s.title, s.spYear, s.mbYear, s.id].map(q).join(';')));
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName(set.name) + '.csv'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function fileName(n) { return 'Schmollster-' + (n || 'Karten').replace(/[^\w\-äöüÄÖÜß ]+/g, '').trim().replace(/\s+/g, '-'); }
+
+/* =========================================================
+   PDF-Druckbogen
+   ========================================================= */
+// Standard-PDF-Schrift kann nur Windows-1252-Zeichen – alles andere wird vereinfacht
+const CP1252_EXTRA = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
+function pdfSafe(str) {
+  let out = '';
+  for (const ch of String(str || '')) {
+    const c = ch.codePointAt(0);
+    if ((c >= 32 && c <= 126) || (c >= 160 && c <= 255) || CP1252_EXTRA.includes(ch)) { out += ch; continue; }
+    const base = ch.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const map = { 'ł': 'l', 'Ł': 'L', 'đ': 'd', 'Đ': 'D', 'ı': 'i', '′': "'", '″': '"', '‐': '-', '‑': '-', '−': '-' };
+    if (map[ch]) out += map[ch];
+    else if (base && [...base].every(b => b.codePointAt(0) < 256)) out += base;
+    else out += '?';
+  }
+  return out;
+}
+const DECADE_COLORS = {
+  1950: [123, 63, 160], 1960: [214, 72, 52], 1970: [222, 128, 24], 1980: [229, 46, 128],
+  1990: [33, 150, 160], 2000: [55, 98, 200], 2010: [40, 160, 90], 2020: [140, 48, 210]
+};
+function decadeColor(y) {
+  if (!y) return [90, 90, 110];
+  const d = Math.max(1950, Math.min(2020, Math.floor(y / 10) * 10));
+  return DECADE_COLORS[d];
+}
+function fitLines(doc, text, maxW, sizes, maxLines, style) {
+  for (const size of sizes) {
+    doc.setFont('helvetica', style); doc.setFontSize(size);
+    const lines = doc.splitTextToSize(text, maxW);
+    if (lines.length <= maxLines) return { lines, size };
+  }
+  const size = sizes[sizes.length - 1]; doc.setFontSize(size);
+  const lines = doc.splitTextToSize(text, maxW).slice(0, maxLines);
+  lines[maxLines - 1] = lines[maxLines - 1].replace(/.{0,2}$/, '…');
+  return { lines, size };
+}
+const PT = 0.3528; // mm pro Punkt
+function drawFront(doc, s, x, y, S, styleName) {
+  const col = decadeColor(s.year);
+  const colored = styleName === 'color';
+  if (colored) { doc.setFillColor(...col); doc.rect(x, y, S, S, 'F'); }
+  else { doc.setDrawColor(...col); doc.setLineWidth(1.4); doc.roundedRect(x + 3, y + 3, S - 6, S - 6, 3, 3, 'S'); }
+  const fg = colored ? [255, 255, 255] : [25, 20, 35];
+  const cx = x + S / 2, maxW = S - 13;
+  // Interpret oben
+  doc.setTextColor(...fg);
+  const a = fitLines(doc, pdfSafe(s.artist), maxW, [13, 12, 11, 10, 9, 8], 3, 'bold');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(a.size);
+  const lhA = a.size * PT * 1.18;
+  a.lines.forEach((l, i) => doc.text(l, cx, y + 10 + i * lhA, { align: 'center', baseline: 'top' }));
+  // Jahr in der Mitte
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(46);
+  if (!colored) doc.setTextColor(...col);
+  doc.text(String(s.year || '????'), cx, y + S / 2, { align: 'center', baseline: 'middle' });
+  // Titel unten
+  doc.setTextColor(...fg);
+  const t = fitLines(doc, pdfSafe(s.title), maxW, [12, 11, 10, 9, 8], 3, 'italic');
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(t.size);
+  const lhT = t.size * PT * 1.18;
+  const startT = y + S - 9 - t.lines.length * lhT;
+  t.lines.forEach((l, i) => doc.text(l, cx, startT + i * lhT, { align: 'center', baseline: 'top' }));
+}
+function drawBack(doc, s, x, y, S, edition) {
+  const url = APP_URL + '#t=' + s.id;
+  const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
+  const n = qr.getModuleCount(), size = 42, cell = size / n;
+  const qx = x + (S - size) / 2, qy = y + (S - size) / 2 - 3;
+  doc.setFillColor(0, 0, 0);
+  for (let r = 0; r < n; r++) {
+    let c = 0;
+    while (c < n) {
+      if (qr.isDark(r, c)) {
+        let run = 1; while (c + run < n && qr.isDark(r, c + run)) run++;
+        doc.rect(qx + c * cell, qy + r * cell, run * cell + 0.02, cell + 0.02, 'F');
+        c += run;
+      } else c++;
+    }
+  }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(120, 110, 140);
+  doc.text(pdfSafe(edition || 'Schmollster').toUpperCase(), x + S / 2, y + S - 7, { align: 'center', baseline: 'middle', charSpace: 0.4 });
+}
+function cutMarks(doc, MX, MY, COLS, ROWS, S) {
+  doc.setDrawColor(150, 150, 150); doc.setLineWidth(0.2);
+  for (let c = 0; c <= COLS; c++) {
+    const x = MX + c * S;
+    doc.line(x, MY - 8, x, MY - 2); doc.line(x, MY + ROWS * S + 2, x, MY + ROWS * S + 8);
+  }
+  for (let r = 0; r <= ROWS; r++) {
+    const y = MY + r * S;
+    doc.line(MX - 6, y, MX - 1.5, y); doc.line(MX + COLS * S + 1.5, y, MX + COLS * S + 6, y);
+  }
+}
+async function makePdf() {
+  $('pdf-err').textContent = '';
+  const set = getSet();
+  set.edition = $('edition').value.trim(); set.style = $('style').value; saveSet(set);
+  const cards = set.songs.filter(s => s.include);
+  if (!cards.length) { toast('Keine Karte ausgewählt.'); return; }
+  const bad = cards.filter(s => !s.year || s.year < 1900 || s.year > new Date().getFullYear() + 1);
+  if (bad.length && !confirm(`${bad.length} Karte(n) ohne gültiges Jahr (z. B. „${bad[0].title}“). Trotzdem erstellen?`)) return;
+  const btn = $('btn-pdf'); btn.disabled = true; btn.textContent = 'Erstelle PDF…';
+  try {
+    await Promise.all([loadScript(CDN.jspdf), loadScript(CDN.qrcode)]);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+    doc.setProperties({ title: 'Schmollster – ' + set.name, creator: 'Schmollster' });
+    const S = 65, COLS = 3, ROWS = 4, PER = COLS * ROWS;
+    const MX = (210 - COLS * S) / 2, MY = (297 - ROWS * S) / 2;
+    const pages = Math.ceil(cards.length / PER);
+    for (let p = 0; p < pages; p++) {
+      const chunk = cards.slice(p * PER, (p + 1) * PER);
+      if (p > 0) doc.addPage();
+      chunk.forEach((s, i) => drawFront(doc, s, MX + (i % COLS) * S, MY + Math.floor(i / COLS) * S, S, set.style));
+      if (set.style === 'color') { // dünne Trennlinien zwischen farbigen Karten
+        doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.3);
+        for (let c = 1; c < COLS; c++) doc.line(MX + c * S, MY, MX + c * S, MY + ROWS * S);
+        for (let r = 1; r < ROWS; r++) doc.line(MX, MY + r * S, MX + COLS * S, MY + r * S);
+      }
+      cutMarks(doc, MX, MY, COLS, ROWS, S);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(150, 150, 150);
+      doc.text(`Vorderseiten · Blatt ${p + 1}/${pages}`, 105, 290, { align: 'center' });
+      doc.addPage();
+      // Rückseite gespiegelt (an der langen Kante wenden)
+      chunk.forEach((s, i) => drawBack(doc, s, MX + (COLS - 1 - (i % COLS)) * S, MY + Math.floor(i / COLS) * S, S, set.edition));
+      cutMarks(doc, MX, MY, COLS, ROWS, S);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(150, 150, 150);
+      doc.text(`Rückseiten · Blatt ${p + 1}/${pages}`, 105, 290, { align: 'center' });
+    }
+    doc.save(fileName(set.name) + '.pdf');
+    toast('PDF erstellt ✓');
+  } catch (e) { console.error(e); $('pdf-err').textContent = 'Fehler beim Erstellen: ' + e.message; }
+  finally { btn.disabled = false; btn.textContent = 'PDF erstellen'; }
+}
+
+/* =========================================================
+   Spielen: QR scannen → Song auf Spotify ab 0:00
+   ========================================================= */
+const player = { track: null, playing: false, deviceId: null, stopTimer: null };
+function parseTrack(text) {
+  const m = String(text).match(/[#&?]t=([A-Za-z0-9]{22})/) || String(text).match(/track[/:]([A-Za-z0-9]{22})/);
+  return m ? m[1] : null;
+}
+function setPlayStatus(t) { $('play-status').textContent = t; }
+function renderPlayButtons() {
+  $('btn-toggle').disabled = !player.track; $('btn-restart').disabled = !player.track;
+  $('btn-toggle').textContent = player.playing ? 'Pause' : 'Weiter';
+  $('disc').classList.toggle('spin', player.playing);
+  $('btn-scan').textContent = player.track ? 'Nächste Karte scannen' : 'Karte scannen';
+  $('reveal-wrap').style.display = player.track ? 'block' : 'none';
+}
+async function pickDevice() {
+  const { devices = [] } = await api('GET', '/me/player/devices') || {};
+  const usable = devices.filter(d => !d.is_restricted);
+  return usable.find(d => d.is_active) || usable.find(d => d.id === player.deviceId) ||
+         usable.find(d => /smartphone/i.test(d.type)) || usable[0] || null;
+}
+async function playTrack(id) {
+  show('play');
+  if (!loggedIn()) { store.set('hs_pending_t', id); setPlayStatus('Einmal bei Spotify anmelden, dann geht’s los.'); return login('play'); }
+  $('device-box').style.display = 'none';
+  setPlayStatus('Verbinde mit Spotify…');
+  player.track = id; $('reveal').innerHTML = ''; $('reveal-wrap').open = false;
+  try {
+    const dev = await pickDevice();
+    if (!dev) { showNoDevice(); return; }
+    player.deviceId = dev.id;
+    await api('PUT', `/me/player/play?device_id=${encodeURIComponent(dev.id)}`, { uris: ['spotify:track:' + id], position_ms: 0 });
+    player.playing = true;
+    setPlayStatus('♪ Läuft auf „' + dev.name + '“ – wann kam dieser Song raus?');
+    scheduleAutoStop();
+    if (navigator.vibrate) navigator.vibrate(60);
+  } catch (e) {
+    if (e.status === 404) { showNoDevice(); return; }
+    if (e.status === 403) { setPlayStatus('Spotify lehnt das Abspielen ab (Premium nötig, oder dein Konto steht nicht unter „User Management“ der Spotify-App).'); return; }
+    handleError(e, 'play'); setPlayStatus('Das hat nicht geklappt – nochmal scannen.');
+  } finally { renderPlayButtons(); }
+}
+function showNoDevice() {
+  player.playing = false; renderPlayButtons();
+  setPlayStatus('Kein aktives Spotify gefunden.');
+  $('device-box').style.display = 'block';
+}
+function scheduleAutoStop() {
+  clearTimeout(player.stopTimer);
+  const sec = +$('autostop').value;
+  if (sec > 0) player.stopTimer = setTimeout(() => { if (player.playing) togglePlay(); }, sec * 1000);
+}
+async function togglePlay() {
+  try {
+    if (player.playing) { await api('PUT', '/me/player/pause'); player.playing = false; clearTimeout(player.stopTimer); setPlayStatus('Pausiert.'); }
+    else { await api('PUT', '/me/player/play' + (player.deviceId ? '?device_id=' + encodeURIComponent(player.deviceId) : '')); player.playing = true; setPlayStatus('♪ Läuft weiter…'); scheduleAutoStop(); }
+  } catch (e) { if (e.status === 404) showNoDevice(); else handleError(e, 'play'); }
+  renderPlayButtons();
+}
+async function reveal() {
+  if (!player.track || $('reveal').innerHTML) return;
+  try {
+    const t = await api('GET', '/tracks/' + player.track);
+    const set = getSet(); const s = set && set.songs.find(x => x.id === player.track);
+    const year = s ? s.year : parseInt(t.album.release_date, 10);
+    const artist = s ? s.artist : joinArtists(t.artists.map(a => a.name));
+    const title = s ? s.title : cleanTitle(t.name);
+    $('reveal').innerHTML = `<div class="year-big">${esc(year)}</div><p><b>${esc(artist)}</b><br><i>${esc(title)}</i></p>${s ? '' : '<p class="small muted">Jahr laut Spotify – kann vom Original abweichen.</p>'}`;
+  } catch (e) { handleError(e, 'play'); }
+}
+
+/* ---------- Kamera-Scanner ---------- */
+let scanStream = null, scanning = false, detector = null;
+async function startScan() {
+  if (!loggedIn()) return login('play');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('Kamera nicht verfügbar (läuft die Seite über https?).', 4000); return; }
+  $('scanner').classList.add('on'); $('scan-hint').textContent = 'QR-Code in den Rahmen halten';
+  try {
+    scanStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false });
+  } catch (e) { stopScan(); toast('Kein Kamerazugriff. Bitte in den Browser-Einstellungen erlauben.', 4500); return; }
+  const v = $('video'); v.srcObject = scanStream; await v.play().catch(() => {});
+  if (!detector && 'BarcodeDetector' in window) {
+    try { const f = await BarcodeDetector.getSupportedFormats(); if (f.includes('qr_code')) detector = new BarcodeDetector({ formats: ['qr_code'] }); } catch {}
+  }
+  if (!detector) { try { await loadScript(CDN.jsqr); } catch (e) { stopScan(); toast(e.message); return; } }
+  scanning = true; scanLoop();
+}
+async function scanLoop() {
+  if (!scanning) return;
+  const v = $('video'); let text = null;
+  try {
+    if (v.readyState >= 2) {
+      if (detector) { const codes = await detector.detect(v); if (codes.length) text = codes[0].rawValue; }
+      else {
+        const c = $('scan-canvas'), scale = Math.min(1, 720 / Math.max(v.videoWidth, v.videoHeight));
+        c.width = Math.round(v.videoWidth * scale); c.height = Math.round(v.videoHeight * scale);
+        const ctx = c.getContext('2d', { willReadFrequently: true }); ctx.drawImage(v, 0, 0, c.width, c.height);
+        const img = ctx.getImageData(0, 0, c.width, c.height);
+        const r = window.jsQR(img.data, c.width, c.height, { inversionAttempts: 'dontInvert' }); if (r) text = r.data;
+      }
+    }
+  } catch {}
+  if (text) {
+    const id = parseTrack(text);
+    if (id) { stopScan(); playTrack(id); return; }
+    $('scan-hint').textContent = 'Das ist kein Schmollster-Code.';
+  }
+  setTimeout(scanLoop, 120);
+}
+function stopScan() {
+  scanning = false;
+  if (scanStream) scanStream.getTracks().forEach(t => t.stop());
+  scanStream = null; $('scanner').classList.remove('on');
+}
+
+/* ---------- Bildschirm anlassen beim Spielen ---------- */
+let wakeLock = null;
+async function requestWakeLock() { try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); } } catch {} }
+function releaseWakeLock() { try { wakeLock && wakeLock.release(); } catch {} wakeLock = null; }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && currentView === 'play') requestWakeLock(); });
+
+/* =========================================================
+   Verdrahtung & Start
+   ========================================================= */
+function wire() {
+  $('brand').onclick = () => clientId() ? renderHome() : renderSetup();
+  $('btn-back').onclick = () => { const t = backTarget[currentView]; t === 'home' ? renderHome() : t === 'create' ? openCreate() : show(t); };
+  $('btn-settings').onclick = renderSettings;
+  $('redirect-uri').onclick = () => copyText(APP_URL);
+  $('btn-save-cid').onclick = () => {
+    const v = $('cid-input').value.trim();
+    if (!/^[a-f0-9]{32}$/i.test(v)) { toast('Die Client ID besteht aus 32 Zeichen (0–9, a–f). Bitte nochmal kopieren.', 4000); return; }
+    if (v !== clientId()) { store.del('hs_tok'); store.del('hs_me'); }
+    store.set('hs_cid', v); login('home');
+  };
+  $('btn-login').onclick = () => login('home');
+  $('go-play').onclick = () => { show('play'); renderPlayButtons(); };
+  $('go-create').onclick = openCreate;
+  $('btn-load').onclick = loadPlaylist;
+  $('pl-input').addEventListener('keydown', e => { if (e.key === 'Enter') loadPlaylist(); });
+  $('btn-skip-mb').onclick = () => { skipMb = true; toast('Prüfung wird übersprungen…'); };
+  $('btn-resume').onclick = renderReview;
+  $('songs').addEventListener('change', onSongEdit);
+  $('songs').addEventListener('input', e => { if (e.target.dataset.f !== 'include') onSongEdit(e); });
+  $('only-flagged').onchange = drawSongs;
+  $('btn-pdf').onclick = makePdf;
+  $('btn-csv').onclick = exportCsv;
+  $('edition').onchange = () => { const s = getSet(); s.edition = $('edition').value.trim(); saveSet(s); };
+  $('style').onchange = () => { const s = getSet(); s.style = $('style').value; saveSet(s); };
+  $('btn-scan').onclick = startScan;
+  $('btn-scan-cancel').onclick = stopScan;
+  $('btn-toggle').onclick = togglePlay;
+  $('btn-restart').onclick = () => player.track && playTrack(player.track);
+  $('btn-retry').onclick = () => player.track && playTrack(player.track);
+  $('autostop').value = String(store.get('hs_autostop', 0));
+  $('autostop').onchange = () => { store.set('hs_autostop', +$('autostop').value); if (player.playing) scheduleAutoStop(); };
+  $('reveal-wrap').addEventListener('toggle', () => { if ($('reveal-wrap').open) reveal(); });
+  if (/android/i.test(navigator.userAgent)) $('open-spotify').href = 'intent://#Intent;package=com.spotify.music;end';
+  $('btn-logout').onclick = () => { store.del('hs_tok'); store.del('hs_me'); toast('Abgemeldet.'); renderHome(); };
+  $('btn-reset').onclick = () => { store.del('hs_tok'); store.del('hs_me'); renderSetup(); };
+  window.addEventListener('hashchange', () => {
+    const id = parseTrack(location.hash); if (id) { history.replaceState(null, '', APP_URL); playTrack(id); }
+  });
+}
+function openCreate() {
+  show('create');
+  const set = getSet();
+  $('resume-box').style.display = set ? 'block' : 'none';
+  if (set) $('resume-name').textContent = `${set.name} (${set.songs.length} Songs)`;
+  const pend = store.get('hs_pending_pl'); if (pend) { $('pl-input').value = pend; store.del('hs_pending_pl'); }
+}
+
+async function boot() {
+  wire();
+  const q = new URLSearchParams(location.search);
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get('cid') && /^[a-f0-9]{32}$/i.test(h.get('cid'))) { if (h.get('cid') !== clientId()) { store.del('hs_tok'); store.del('hs_me'); } store.set('hs_cid', h.get('cid')); toast('Eingerichtet ✓ – jetzt noch bei Spotify anmelden.'); }
+  const hashTrack = parseTrack(location.hash);
+  if (hashTrack) store.set('hs_pending_t', hashTrack);
+  let returnTo = null;
+  if (q.get('error')) toast('Spotify-Anmeldung abgebrochen (' + q.get('error') + ').', 4500);
+  if (q.get('code')) {
+    try { returnTo = await exchangeCode(q.get('code'), q.get('state')); }
+    catch (e) { toast(e.message, 5000); }
+  }
+  if (q.toString() || location.hash) history.replaceState(null, '', APP_URL);
+
+  if (!clientId()) return renderSetup();
+  const pendingT = store.get('hs_pending_t');
+  if (pendingT && loggedIn()) { store.del('hs_pending_t'); return playTrack(pendingT); }
+  if (pendingT && !loggedIn()) { show('play'); renderPlayButtons(); setPlayStatus('Einmal bei Spotify anmelden, dann geht’s los.'); $('btn-scan').textContent = 'Mit Spotify anmelden'; $('btn-scan').onclick = () => login('play'); return; }
+  if (returnTo === 'create') return openCreate();
+  if (returnTo === 'play') { show('play'); renderPlayButtons(); return; }
+  if (returnTo === 'review' && getSet()) return renderReview();
+  renderHome();
+}
+boot();
+</script>
+</body>
+</html>
