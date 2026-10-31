@@ -196,6 +196,11 @@
         <option value="color">Farbig (Farbe je Jahrzehnt)</option>
         <option value="eco">Tintensparend (weiß mit Farbrahmen)</option>
       </select>
+      <p class="small muted" style="margin-top:12px">Bei Klassik (Orchester, Dirigent usw.):</p>
+      <select id="perf">
+        <option value="paren">Komponist groß, Interpreten klein in Klammern</option>
+        <option value="none">Nur den Komponisten drucken</option>
+      </select>
       <div class="row" style="margin-top:14px">
         <button class="btn pink" id="btn-pdf">PDF erstellen</button>
         <button class="btn ghost" id="btn-csv">Liste als CSV speichern</button>
@@ -473,6 +478,68 @@ function norm(s) {
     .replace(/\s*[\(\[].*?[\)\]]/g, '').replace(/\s+-\s+.*$/, '').replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '');
 }
 
+/* ---------- Klassik ---------- */
+// Klassik erkennen: Werkverzeichnis-Nummer im Titel (Op., BWV, KV …) – oder Gattungswort + mehrere Künstler
+const CATALOG_TEST = /\b(op(us)?\.?\s*\d|bwv\s*\d|kv\s*\d|k\.\s*\d|hob\.\s*[ivxlc]|woo\s*\d|trv\s*\d|rv\s*\d|hwv\s*\d|sz\.?\s*\d|d\.\s*\d{2,})/i;
+const GENRE_TEST = /symphon|sinfonie|concerto|konzert f|klavierkonzert|violinkonzert|sonat[ae]\b|ouvert[uü]re|overture|pr[ée]lud|fugue|\bfuge\b|requiem|\bmesse\b|\bmass in\b|nocturne|[ée]tude|serenade|divertimento|quartet|streichquartett|kantate|cantata|oratori|tondichtung|symphonic poem|impromptu|mazurka|polonaise|scherzo|adagio|allegro|andante|\blargo\b/i;
+function isClassical(title, artists) {
+  if (CATALOG_TEST.test(title || '')) return 'cat';
+  if (GENRE_TEST.test(title || '') && (artists || []).length >= 2) return 'genre';
+  return false;
+}
+function formatClassical(artists, ci) {
+  if (!artists.length) return '';
+  const i = Math.min(ci || 0, artists.length - 1);
+  const others = artists.filter((_, k) => k !== i).slice(0, 3);
+  return others.length ? `${artists[i]} (${others.join(', ')})` : artists[i];
+}
+const CATALOG_RE = /,?\s*\b(?:op(?:us)?\.?|bwv|kv|k\.|hob\.?\s*[ivxlc]+:?|woo|trv|rv|hwv|sz\.?|d\.)\s*\d+[a-z]?(?:\s*,?\s*(?:no\.?|nr\.?)\s*\d+)?/gi;
+const KEY_RE = /,?\s+in\s+[a-h](?:[- ]?(?:flat|sharp|is|es|s))?[- ](?:major|minor|dur|moll)\b/gi;
+function workQueries(title) {
+  const base = String(title).split(/\s*:\s*/)[0].replace(/\s*[\(\[][^)\]]*(remaster|live|version|edit)[^)\]]*[\)\]]/gi, '');
+  const plain = base.replace(CATALOG_RE, '').replace(KEY_RE, '').replace(/\s*["“„”'‘’][^"“„”'‘’]*["“„”'‘’]/g, '').replace(/[\s,;–-]+$/, '').trim();
+  const qs = [plain, base.trim()];
+  const cat = base.match(/\b(?:bwv|kv|k\.|hwv|rv|trv|d\.)\s*\d+[a-z]?/i); if (cat) qs.push(cat[0].replace(/\s+/, ' '));
+  return [...new Set(qs.filter(q => q && q.length >= 3))];
+}
+const WD = 'https://www.wikidata.org/w/api.php';
+let wdLast = 0;
+async function wdGet(params) {
+  const wait = wdLast + 250 - Date.now(); if (wait > 0) await sleep(wait);
+  wdLast = Date.now();
+  const r = await fetch(WD + '?' + new URLSearchParams({ ...params, format: 'json', origin: '*' }));
+  if (!r.ok) throw new Error('Wikidata ' + r.status);
+  return r.json();
+}
+const WD_EXCLUDE = /\b(album|single|film|movie|recording|episode|painting|novel|book|video game|record label|edition|television|tv series|band)\b/i;
+function wdYearOf(entity) {
+  const years = [];
+  for (const prop of ['P571', 'P1191', 'P577']) for (const c of (entity.claims && entity.claims[prop]) || []) {
+    const v = c.mainsnak && c.mainsnak.datavalue && c.mainsnak.datavalue.value;
+    if (v && v.time && v.precision >= 9) { const y = parseInt(v.time.slice(1, 5), 10); if (v.time[0] === '+' && y >= 1000) years.push(y); }
+  }
+  return years.length ? Math.min(...years) : null;
+}
+// Sucht das Werk bei Wikidata: Komponist (welcher Spotify-Künstler) + Entstehungsjahr
+async function wdLookup(s) {
+  const last = s.artists.map(a => norm(a.trim().split(/\s+/).filter(w => !/^(i{1,3}|iv|jr\.?|sr\.?)$/i.test(w)).pop() || ''));
+  const words = d => new Set(String(d).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().split(/[^a-z0-9]+/));
+  for (const q of workQueries(s.origTitle)) for (const lang of ['de', 'en']) {
+    const res = await wdGet({ action: 'wbsearchentities', search: q, language: lang, uselang: 'en', type: 'item', limit: '20' });
+    for (const cand of res.search || []) {
+      const desc = cand.description || '';
+      if (!desc || WD_EXCLUDE.test(desc)) continue;
+      const dw = words(desc);
+      const ci = last.findIndex(l => l.length >= 3 && dw.has(l));
+      if (ci < 0) continue;
+      const ent = await wdGet({ action: 'wbgetentities', ids: cand.id, props: 'claims', languages: 'en' });
+      const year = wdYearOf((ent.entities || {})[cand.id] || {});
+      return { qid: cand.id, label: cand.label || q, ci, year };
+    }
+  }
+  return null;
+}
+
 let loadAbort = false, skipMb = false;
 async function loadPlaylist() {
   const id = parsePlaylistId($('pl-input').value);
@@ -502,8 +569,11 @@ async function loadPlaylist() {
         if (!t || t.type !== 'track' || t.is_local || !t.id) { skipped++; continue; }
         const spYear = parseInt((t.album && t.album.release_date) || '', 10) || null;
         const title = cleanTitle(t.name);
+        const artists = (t.artists || []).map(a => a.name).filter(Boolean);
+        const classical = isClassical(t.name, artists);
         songs.push({
-          id: t.id, origTitle: t.name, title, artist: joinArtists((t.artists || []).map(a => a.name)),
+          id: t.id, origTitle: t.name, title, artists, classical, ci: 0,
+          artist: classical ? formatClassical(artists, 0) : joinArtists(artists),
           mainArtist: (t.artists && t.artists[0] && t.artists[0].name) || '',
           spYear, mbYear: null, year: spYear, isrc: t.external_ids && t.external_ids.isrc, albumUri: t.album && t.album.uri,
           compilation: t.album && t.album.album_type === 'compilation',
@@ -519,12 +589,25 @@ async function loadPlaylist() {
 
     if ($('mb-check').checked) {
       $('btn-skip-mb').style.display = 'inline-flex';
+      const fmtLeft = sec => sec > 90 ? Math.round(sec / 60) + ' min' : sec + ' s';
       for (let i = 0; i < songs.length; i++) {
         if (skipMb || loadAbort) break;
         const s = songs[i];
-        const left = Math.ceil((songs.length - i) * 1.15);
-        setP(`Prüfe Erscheinungsjahre… ${i + 1} / ${songs.length} (noch ca. ${left > 90 ? Math.round(left / 60) + ' min' : left + ' s'})`, 0.2 + 0.8 * (i / songs.length));
-        try { s.mbYear = await mbYear(s); s.status = 'checked'; } catch { s.status = 'unchecked'; }
+        const left = Math.ceil((songs.length - i) * 1.3);
+        setP(`Prüfe Jahre${s.classical ? ' (Klassik)' : ''}… ${i + 1} / ${songs.length} (noch ca. ${fmtLeft(left)})`, 0.2 + 0.8 * (i / songs.length));
+        if (s.classical) {
+          try {
+            const r = await wdLookup(s);
+            s.status = 'checked';
+            if (r) { s.wd = r; s.ci = r.ci; s.artist = formatClassical(s.artists, r.ci); s.wdYear = r.year || null; }
+            else if (s.classical === 'genre') { // doch eher kein Klassik-Werk → normal prüfen
+              s.classical = false; s.artist = joinArtists(s.artists);
+              s.mbYear = await mbYear(s);
+            }
+          } catch { s.status = 'unchecked'; }
+        } else {
+          try { s.mbYear = await mbYear(s); s.status = 'checked'; } catch { s.status = 'unchecked'; }
+        }
         applyYear(s);
         if (i % 10 === 9) store.set('hs_set', set);
       }
@@ -539,6 +622,11 @@ async function loadPlaylist() {
   finally { btn.disabled = false; setTimeout(() => box.style.display = 'none', 600); }
 }
 function applyYear(s) {
+  if (s.classical) { // Klassik: Entstehungsjahr des Werks statt Jahr der Aufnahme/CD
+    if (s.wdYear) { s.year = s.wdYear; s.flag = 'classic'; }
+    else { s.year = s.year || s.spYear; s.flag = 'check'; }
+    return;
+  }
   if (s.mbYear && s.spYear && s.mbYear < s.spYear) { s.year = s.mbYear; s.flag = 'changed'; }
   else if (!s.spYear && s.mbYear) { s.year = s.mbYear; s.flag = 'changed'; }
   else { s.year = s.year || s.spYear; s.flag = (s.status === 'checked' && !s.mbYear) || (s.compilation && !s.mbYear) ? 'check' : (s.status === 'checked' ? 'ok' : 'none'); }
@@ -586,6 +674,7 @@ function renderReview() {
   $('rv-title').textContent = set.name;
   $('edition').value = set.edition || set.name;
   $('style').value = set.style || 'color';
+  $('perf').value = set.perf || 'paren';
   drawSongs();
 }
 function drawSongs() {
@@ -597,8 +686,12 @@ function drawSongs() {
     let info = '';
     if (!s.playable) info += '<span class="badge b-bad">in deinem Land nicht abspielbar</span>';
     if (s.flag === 'changed') info += `<span class="badge b-warn">Jahr korrigiert</span>Spotify: ${s.spYear || '–'} → Datenbank: ${s.mbYear}`;
-    else if (s.flag === 'check') info += `<span class="badge b-bad">prüfen</span>${s.compilation ? 'Stammt von einer Compilation. ' : ''}${s.status === 'checked' ? 'In der Datenbank nicht gefunden.' : ''}`;
+    else if (s.flag === 'check') info += `<span class="badge b-bad">prüfen</span>${s.compilation ? 'Stammt von einer Compilation. ' : ''}${s.status === 'checked' && !s.classical ? 'In der Datenbank nicht gefunden.' : ''}`;
     else if (s.flag === 'ok') info += '<span class="badge b-ok">✓ geprüft</span>';
+    else if (s.flag === 'classic') info += `<span class="badge b-ok">Klassik</span>Entstehungsjahr laut <a href="https://www.wikidata.org/wiki/${esc(s.wd.qid)}" target="_blank" rel="noopener">Wikidata</a> („${esc(s.wd.label)}“) · Spotify: ${s.spYear || '–'}`;
+    if (s.classical && s.flag === 'check') info += s.wd
+      ? ` Klassik: Werk gefunden („${esc(s.wd.label)}“), aber kein Entstehungsjahr – bitte eintragen.`
+      : ` Klassik: Werk nicht gefunden – bitte Entstehungsjahr eintragen und Komponist prüfen (Spotify-Jahr ${s.spYear || '–'} ist nur das Jahr der Aufnahme/CD).`;
     if (s.origTitle !== s.title) info += ` <span title="Originaltitel">Spotify-Titel: ${esc(s.origTitle)}</span>`;
     const cls = ['song', s.flag === 'changed' ? 'changed' : '', s.flag === 'check' ? 'check' : '', s.include ? '' : 'off'].join(' ');
     html.push(`<div class="${cls}" data-i="${i}">
@@ -662,8 +755,12 @@ const DECADE_COLORS = {
   1950: [123, 63, 160], 1960: [214, 72, 52], 1970: [222, 128, 24], 1980: [229, 46, 128],
   1990: [33, 150, 160], 2000: [55, 98, 200], 2010: [40, 160, 90], 2020: [140, 48, 210]
 };
+const ERA_COLORS = [ // ältere Musik: Farbe je halbes Jahrhundert
+  [1700, [120, 84, 48]], [1750, [150, 110, 40]], [1800, [170, 60, 80]], [1850, [45, 80, 140]], [1900, [70, 110, 120]]
+];
 function decadeColor(y) {
   if (!y) return [90, 90, 110];
+  if (y < 1950) { let c = ERA_COLORS[0][1]; for (const [from, col] of ERA_COLORS) if (y >= from) c = col; return c; }
   const d = Math.max(1950, Math.min(2020, Math.floor(y / 10) * 10));
   return DECADE_COLORS[d];
 }
@@ -679,7 +776,7 @@ function fitLines(doc, text, maxW, sizes, maxLines, style) {
   return { lines, size };
 }
 const PT = 0.3528; // mm pro Punkt
-function drawFront(doc, s, x, y, S, styleName) {
+function drawFront(doc, s, x, y, S, styleName, perfMode) {
   const col = decadeColor(s.year);
   const colored = styleName === 'color';
   if (colored) { doc.setFillColor(...col); doc.rect(x, y, S, S, 'F'); }
@@ -688,10 +785,29 @@ function drawFront(doc, s, x, y, S, styleName) {
   const cx = x + S / 2, maxW = S - 13;
   // Interpret oben
   doc.setTextColor(...fg);
-  const a = fitLines(doc, pdfSafe(s.artist), maxW, [13, 12, 11, 10, 9, 8], 3, 'bold');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(a.size);
-  const lhA = a.size * PT * 1.18;
-  a.lines.forEach((l, i) => doc.text(l, cx, y + 10 + i * lhA, { align: 'center', baseline: 'top' }));
+  const pm = String(s.artist || '').match(/^(.*?)\s*\(([^()]*)\)\s*$/);
+  const mainA = pdfSafe(pm ? pm[1] : s.artist);
+  const perf = pm && perfMode !== 'none' ? pdfSafe('(' + pm[2] + ')') : '';
+  if (!perf) {
+    const a = fitLines(doc, mainA, maxW, [13, 12, 11, 10, 9, 8], 3, 'bold');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(a.size);
+    const lhA = a.size * PT * 1.18;
+    a.lines.forEach((l, i) => doc.text(l, cx, y + 10 + i * lhA, { align: 'center', baseline: 'top' }));
+  } else { // Komponist fett, Interpreten klein darunter – zusammen max. ~14,5 mm hoch
+    let best = null;
+    outer: for (const sa of [13, 12, 11, 10, 9]) for (const sp of [9, 8, 7]) {
+      if (sp >= sa) continue;
+      const a = fitLines(doc, mainA, maxW, [sa], 2, 'bold'), p = fitLines(doc, perf, maxW, [sp], 2, 'normal');
+      const h = a.lines.length * sa * PT * 1.18 + 0.8 + p.lines.length * sp * PT * 1.18;
+      best = { a, p, sa, sp }; if (h <= 14.5) break outer;
+    }
+    const lhA = best.sa * PT * 1.18, lhP = best.sp * PT * 1.18;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(best.sa);
+    best.a.lines.forEach((l, i) => doc.text(l, cx, y + 10 + i * lhA, { align: 'center', baseline: 'top' }));
+    const py = y + 10 + best.a.lines.length * lhA + 0.8;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(best.sp);
+    best.p.lines.forEach((l, i) => doc.text(l, cx, py + i * lhP, { align: 'center', baseline: 'top' }));
+  }
   // Jahr in der Mitte
   doc.setFont('helvetica', 'bold'); doc.setFontSize(46);
   if (!colored) doc.setTextColor(...col);
@@ -705,7 +821,8 @@ function drawFront(doc, s, x, y, S, styleName) {
   t.lines.forEach((l, i) => doc.text(l, cx, startT + i * lhT, { align: 'center', baseline: 'top' }));
 }
 function drawBack(doc, s, x, y, S, edition) {
-  const url = APP_URL + '#t=' + s.id;
+  const code = encodeCard(s.id, s.year, s.ci || 0);
+  const url = APP_URL + '#t=' + s.id + (code ? '.' + code : '');
   const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
   const n = qr.getModuleCount(), size = 42, cell = size / n;
   const qx = x + (S - size) / 2, qy = y + (S - size) / 2 - 3;
@@ -737,10 +854,10 @@ function cutMarks(doc, MX, MY, COLS, ROWS, S) {
 async function makePdf() {
   $('pdf-err').textContent = '';
   const set = getSet();
-  set.edition = $('edition').value.trim(); set.style = $('style').value; saveSet(set);
+  set.edition = $('edition').value.trim(); set.style = $('style').value; set.perf = $('perf').value; saveSet(set);
   const cards = set.songs.filter(s => s.include);
   if (!cards.length) { toast('Keine Karte ausgewählt.'); return; }
-  const bad = cards.filter(s => !s.year || s.year < 1900 || s.year > new Date().getFullYear() + 1);
+  const bad = cards.filter(s => !s.year || s.year < 1000 || s.year > new Date().getFullYear() + 1);
   if (bad.length && !confirm(`${bad.length} Karte(n) ohne gültiges Jahr (z. B. „${bad[0].title}“). Trotzdem erstellen?`)) return;
   const btn = $('btn-pdf'); btn.disabled = true; btn.textContent = 'Erstelle PDF…';
   try {
@@ -754,7 +871,7 @@ async function makePdf() {
     for (let p = 0; p < pages; p++) {
       const chunk = cards.slice(p * PER, (p + 1) * PER);
       if (p > 0) doc.addPage();
-      chunk.forEach((s, i) => drawFront(doc, s, MX + (i % COLS) * S, MY + Math.floor(i / COLS) * S, S, set.style));
+      chunk.forEach((s, i) => drawFront(doc, s, MX + (i % COLS) * S, MY + Math.floor(i / COLS) * S, S, set.style, set.perf || 'paren'));
       if (set.style === 'color') { // dünne Trennlinien zwischen farbigen Karten
         doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.3);
         for (let c = 1; c < COLS; c++) doc.line(MX + c * S, MY, MX + c * S, MY + ROWS * S);
@@ -780,9 +897,23 @@ async function makePdf() {
    Spielen: QR scannen → Song auf Spotify ab 0:00
    ========================================================= */
 const player = { track: null, playing: false, deviceId: null, stopTimer: null };
+// liefert "SONGID" oder "SONGID.code" (code = verschlüsseltes Kartenjahr)
 function parseTrack(text) {
-  const m = String(text).match(/[#&?]t=([A-Za-z0-9]{22})/) || String(text).match(/track[/:]([A-Za-z0-9]{22})/);
+  const str = String(text);
+  let m = str.match(/[#&?]t=([A-Za-z0-9]{22})(?:\.([a-z0-9]{1,6}))?/);
+  if (m) return m[2] ? m[1] + '.' + m[2] : m[1];
+  m = str.match(/track[/:]([A-Za-z0-9]{22})/);
   return m ? m[1] : null;
+}
+function cardHash(id) { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) & 0xFFFF; return h; }
+function encodeCard(id, year, ci) {
+  if (!(year >= 1000 && year <= 2100)) return '';
+  return ((year * 4 + Math.min(ci || 0, 3)) ^ cardHash(id)).toString(36);
+}
+function decodeCard(id, code) {
+  if (!code) return null;
+  const v = parseInt(code, 36) ^ cardHash(id), year = v >> 2;
+  return year >= 1000 && year <= 2100 ? { year, ci: v & 3 } : null;
 }
 function setPlayStatus(t) { $('play-status').textContent = t; }
 function renderPlayButtons() {
@@ -798,9 +929,11 @@ async function pickDevice() {
   return usable.find(d => d.is_active) || usable.find(d => d.id === player.deviceId) ||
          usable.find(d => /smartphone/i.test(d.type)) || usable[0] || null;
 }
-async function playTrack(id) {
+async function playTrack(token) {
+  const [id, code] = String(token).split('.');
+  player.cardInfo = code ? decodeCard(id, code) : (player.track === id ? player.cardInfo : null);
   show('play');
-  if (!loggedIn()) { store.set('hs_pending_t', id); setPlayStatus('Einmal bei Spotify anmelden, dann geht’s los.'); return login('play'); }
+  if (!loggedIn()) { store.set('hs_pending_t', token); setPlayStatus('Einmal bei Spotify anmelden, dann geht’s los.'); return login('play'); }
   $('device-box').style.display = 'none';
   setPlayStatus('Verbinde mit Spotify…');
   player.track = id; $('reveal').innerHTML = ''; $('reveal-wrap').open = false;
@@ -901,10 +1034,13 @@ async function reveal() {
   try {
     const t = await api('GET', '/tracks/' + player.track);
     const set = getSet(); const s = set && set.songs.find(x => x.id === player.track);
-    const year = s ? s.year : parseInt(t.album.release_date, 10);
-    const artist = s ? s.artist : joinArtists(t.artists.map(a => a.name));
+    const card = player.cardInfo;
+    const names = t.artists.map(a => a.name);
+    const year = s ? s.year : card ? card.year : parseInt(t.album.release_date, 10);
+    const artist = s ? s.artist : isClassical(t.name, names) ? formatClassical(names, card ? card.ci : 0) : joinArtists(names);
     const title = s ? s.title : cleanTitle(t.name);
-    $('reveal').innerHTML = `<div class="year-big">${esc(year)}</div><p><b>${esc(artist)}</b><br><i>${esc(title)}</i></p>${s ? '' : '<p class="small muted">Jahr laut Spotify – kann vom Original abweichen.</p>'}`;
+    const note = s || card ? '' : '<p class="small muted">Ältere Karte: Jahr laut Spotify – kann von der Karte abweichen.</p>';
+    $('reveal').innerHTML = `<div class="year-big">${esc(year)}</div><p><b>${esc(artist)}</b><br><i>${esc(title)}</i></p>${note}`;
   } catch (e) { handleError(e, 'play'); }
 }
 
@@ -990,6 +1126,7 @@ function wire() {
   $('btn-csv').onclick = exportCsv;
   $('edition').onchange = () => { const s = getSet(); s.edition = $('edition').value.trim(); saveSet(s); };
   $('style').onchange = () => { const s = getSet(); s.style = $('style').value; saveSet(s); };
+  $('perf').onchange = () => { const s = getSet(); s.perf = $('perf').value; saveSet(s); };
   $('btn-scan').onclick = startScan;
   $('btn-scan-cancel').onclick = stopScan;
   $('btn-toggle').onclick = togglePlay;
