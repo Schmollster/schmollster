@@ -220,6 +220,10 @@
         <p class="small muted" id="dev-text">Tippe auf „Spotify öffnen“ und wechsle danach wieder hierher zurück – der Song startet dann automatisch.</p>
         <div class="row"><a class="btn" id="open-spotify" href="https://open.spotify.com/" target="_blank" rel="noopener">Spotify öffnen</a><button class="btn ghost" id="btn-retry">Nochmal versuchen</button></div>
         <p class="small muted" id="dev-samsung" style="display:none;margin-top:12px"><b>Passiert das öfter?</b> Dann lässt dein Handy Spotify im Hintergrund schlafen. Abhilfe (Samsung): Einstellungen → Apps → Spotify → Akku → „Nicht eingeschränkt“.</p>
+        <details class="small" style="margin-top:12px"><summary>Technische Details (für die Fehlersuche)</summary>
+          <pre id="diag-log" style="white-space:pre-wrap;word-break:break-all;font-size:11px;background:var(--bg2);padding:10px;border-radius:8px;max-height:320px;overflow:auto"></pre>
+          <button class="btn ghost" id="btn-diag-copy" style="min-height:36px;padding:8px 14px">Details kopieren</button>
+        </details>
       </div>
       <div class="row small muted" style="justify-content:center">
         <span>Automatisch stoppen nach</span>
@@ -376,14 +380,30 @@ async function api(method, path, body, attempt = 0) {
   api._lastWas401 = r.status === 401;
   if (r.status === 401 && attempt < 1) return api(method, path, body, attempt + 1);
   if (r.status === 429 && attempt < 4) { await sleep((+r.headers.get('Retry-After') || 2) * 1000); return api(method, path, body, attempt + 1); }
+  const text = (r.status === 204 || r.status === 202) ? '' : await r.text();
+  if (/^\/me\/player/.test(path)) diag(method, path, body, r.status, text);
   if (r.status === 204 || r.status === 202) return null;
-  const text = await r.text();
   let j = null; try { j = text ? JSON.parse(text) : null; } catch {}
   if (!r.ok) {
     const e = new Error((j && j.error && (j.error.message || j.error)) || ('Spotify-Fehler ' + r.status));
     e.status = r.status; e.reason = j && j.error && j.error.reason; throw e;
   }
   return j;
+}
+/* Fehlersuche: die letzten Player-Antworten von Spotify mitschreiben */
+const diagLog = [];
+function diag(method, path, body, status, text) {
+  let short = text || '';
+  try { // nur die interessanten Felder behalten
+    const j = JSON.parse(text);
+    if (j && j.devices) short = JSON.stringify(j.devices.map(d => ({ name: d.name, type: d.type, active: d.is_active, restricted: d.is_restricted, id: (d.id || '').slice(0, 6) })));
+    else if (j && (j.device || 'is_playing' in j)) short = JSON.stringify({ playing: j.is_playing, device: j.device && j.device.name, devId: j.device && (j.device.id || '').slice(0, 6), track: j.item && j.item.id, name: j.item && '(verborgen)', ms: j.progress_ms });
+    else short = text.slice(0, 300);
+  } catch {}
+  const t = new Date().toTimeString().slice(0, 8);
+  diagLog.push(`${t} ${method} ${path.replace(/device_id=([^&]{6})[^&]*/, 'device_id=$1…')} ${body ? JSON.stringify(body).replace(/spotify:track:/, 't:') : ''} → ${status} ${short}`);
+  if (diagLog.length > 25) diagLog.shift();
+  const pre = document.getElementById('diag-log'); if (pre) pre.textContent = diagLog.join('\n');
 }
 function handleError(e, where) {
   console.error(e);
@@ -954,6 +974,7 @@ function wire() {
   $('btn-scan-cancel').onclick = stopScan;
   $('btn-toggle').onclick = togglePlay;
   $('btn-restart').onclick = () => player.track && playTrack(player.track);
+  $('btn-diag-copy').onclick = () => copyText(diagLog.join('\n'));
   $('btn-retry').onclick = () => player.track && playTrack(player.track);
   $('autostop').value = String(store.get('hs_autostop', 0));
   $('autostop').onchange = () => { store.set('hs_autostop', +$('autostop').value); if (player.playing) scheduleAutoStop(); };
