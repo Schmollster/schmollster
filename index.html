@@ -105,6 +105,78 @@
   #toast.on{transform:translateX(-50%) translateY(0)}
   .err{color:var(--bad)}
   details summary{cursor:pointer;color:var(--cyan)}
+  /* ---------- Intro-Animation ---------- */
+  #splash{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:radial-gradient(800px 500px at 50% 40%,#3a1450 0,transparent 70%),var(--bg);overflow:hidden;cursor:pointer}
+  #splash.on{display:grid}
+  #splash.out{opacity:0;transform:scale(1.06);transition:opacity .45s ease,transform .45s ease}
+  .sp-glow{position:absolute;width:70vmin;height:70vmin;border-radius:50%;background:radial-gradient(circle,rgba(255,61,139,.35),transparent 65%);animation:glow 2.4s ease-in-out infinite alternate}
+  @keyframes glow{from{transform:scale(.85);opacity:.6}to{transform:scale(1.15);opacity:1}}
+  .sp-stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:18px;width:min(86vw,520px)}
+  .sp-mark{width:min(62vw,300px);height:auto;overflow:visible}
+  .sp-vin-in,.hm-vin-in{transform-box:fill-box;transform-origin:center}
+  .sp-vin,.hm-vin{transform-box:fill-box;transform-origin:center}
+  .sp-vin-in{animation:rollin .95s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes rollin{from{transform:translateX(-160%) rotate(-540deg) scale(.7);opacity:0}to{transform:none;opacity:1}}
+  .sp-vin{animation:spin 2.2s linear .95s infinite}
+  .sp-card{transform-box:fill-box;transform-origin:center;animation:cardin .65s cubic-bezier(.34,1.56,.64,1) .6s both}
+  @keyframes cardin{from{transform:translate(180px,260px) rotate(50deg) scale(.6);opacity:0}to{transform:none;opacity:1}}
+  .sp-word{width:100%;animation:wipe .7s cubic-bezier(.6,0,.2,1) 1.05s both}
+  .sp-wordmark{width:100%;height:auto;display:block}
+  @keyframes wipe{from{clip-path:inset(0 100% 0 0);transform:translateY(8px)}to{clip-path:inset(0 0 0 0);transform:none}}
+  .sp-eq{animation:fadein .4s ease 1.45s both}
+  .sp-skip{position:absolute;bottom:calc(24px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:var(--muted);font-size:13px;animation:fadein .4s ease 1.2s both}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  /* Equalizer */
+  .eq{display:flex;gap:5px;align-items:flex-end;height:34px}
+  .eq i{display:block;width:7px;border-radius:4px;background:linear-gradient(var(--yellow),var(--pink));height:30%;animation:eq 1s ease-in-out infinite alternate}
+  .eq i:nth-child(2n){animation-duration:.8s;background:linear-gradient(var(--cyan),#2a8cff)}
+  .eq i:nth-child(3n){animation-duration:1.25s}
+  .eq i:nth-child(4n+1){animation-delay:-.4s}
+  .eq i:nth-child(5n+2){animation-delay:-.7s}
+  @keyframes eq{0%{height:18%}50%{height:95%}100%{height:40%}}
+  /* ---------- Startbildschirm ---------- */
+  .hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:8px 0 4px}
+  .hero-mark{width:min(46vw,190px);height:auto;filter:drop-shadow(0 18px 40px rgba(255,61,139,.28));animation:pop .6s cubic-bezier(.34,1.56,.64,1) both}
+  .hm-vin{animation:spin 6s linear infinite}
+  .hm-card{transform-box:fill-box;transform-origin:center;animation:bob 3.2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-10px) rotate(-3deg)}}
+  @keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+  .hero h1{margin:14px 0 2px;animation:rise .5s ease .1s both}
+  .tagline{margin:0 0 10px;color:var(--muted);animation:rise .5s ease .2s both}
+  .hero-eq{height:26px;margin-bottom:4px;opacity:.9}
+  .hero-eq i{width:6px}
+  @keyframes rise{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+  #v-home.on .tile{animation:rise .5s ease both}
+  #v-home.on .tile.play{animation-delay:.25s}
+  #v-home.on .tile.make{animation-delay:.35s}
+  .tile{transition:transform .15s ease,box-shadow .15s ease}
+  .tile:active{transform:scale(.98)}
+  @media (hover:hover){.tile:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.35)}}
+  .tile .glyph{transition:transform .3s ease}
+  @media (hover:hover){.tile:hover .glyph{transform:rotate(-8deg) scale(1.08)}}
+  .last-set{display:flex;align-items:center;gap:12px;width:100%;margin-top:14px;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;text-align:left;cursor:pointer;animation:rise .5s ease .45s both}
+  .last-set[hidden]{display:none}
+  .last-set .ls-icon{--icon-bg:#2c2150;width:42px;height:42px;flex:none;border-radius:12px;background:#2c2150;display:grid;place-items:center;color:var(--yellow)}
+  .last-set .ls-icon svg{width:24px;height:28px}
+  .last-set .ls-text{flex:1;min-width:0}
+  .last-set .ls-text small{display:block;color:var(--muted)}
+  .last-set .ls-text b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .last-set .ls-go{color:var(--cyan);font-size:20px}
+  .rules{margin-top:14px;animation:rise .5s ease .55s both}
+  .rules summary{font-weight:600}
+  .rules ol.steps{margin-top:14px}
+  /* Schwebende Editions-Symbole im Hintergrund */
+  .floaters{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .8s ease}
+  body.on-home .floaters{opacity:1}
+  .floaters span{position:absolute;bottom:-60px;width:34px;height:40px;opacity:.13;animation:floatup linear infinite}
+  .floaters span svg{width:100%;height:100%}
+  @keyframes floatup{from{transform:translateY(0) rotate(0)}to{transform:translateY(-120vh) rotate(var(--rot,180deg))}}
+  main{position:relative;z-index:1}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+    .floaters{display:none}
+  }
+
   .icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:6px}
   .icon-opt{--icon-bg:var(--bg2);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 6px 8px;color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font:inherit;font-size:13px;line-height:1.2;text-align:center;min-height:96px}
   .icon-opt svg{width:30px;height:36px;flex:none}
@@ -115,6 +187,27 @@
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true">
+  <div class="sp-glow"></div>
+  <div class="sp-stage">
+    <svg class="sp-mark" viewBox="0 0 512 512" aria-hidden="true"><defs>
+<linearGradient id="spmbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#241a40"/><stop offset="1" stop-color="#120d1f"/></linearGradient>
+<radialGradient id="spmglow" cx="0.38" cy="0.36" r="0.6"><stop offset="0" stop-color="#ff3d8b" stop-opacity="0.35"/><stop offset="1" stop-color="#ff3d8b" stop-opacity="0"/></radialGradient>
+<linearGradient id="spmlab" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3d8b"/><stop offset="0.55" stop-color="#ff8a1f"/><stop offset="1" stop-color="#ffd23f"/></linearGradient>
+<linearGradient id="spmshine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+<g transform="translate(218 222)"><g class="sp-vin-in"><g class="sp-vin"><circle r="182" fill="#0c0a10"/><circle r="176" fill="none" stroke="#2b2534" stroke-width="3"/><circle r="160" fill="none" stroke="#2b2534" stroke-width="3"/><circle r="144" fill="none" stroke="#2b2534" stroke-width="3"/><circle r="128" fill="none" stroke="#2b2534" stroke-width="3"/><circle r="112" fill="none" stroke="#2b2534" stroke-width="3"/>
+<circle r="74" fill="url(#spmlab)"/><circle cx="0" cy="-48" r="7" fill="#fff" opacity=".35"/><circle r="11" fill="#0c0a10"/></g>
+<path d="M -150 -40 A 156 156 0 0 1 -40 -150" fill="none" stroke="url(#spmshine)" stroke-width="14" stroke-linecap="round"/></g></g>
+<g transform="translate(372 368) rotate(12)"><g class="sp-card"><rect x="-78" y="-98" width="156" height="196" rx="22" fill="#120d1f" opacity="0.55" transform="translate(6 8)"/><rect x="-78" y="-98" width="156" height="196" rx="22" fill="#2ee6d6"/><rect x="-50" y="-70" width="38" height="38" rx="6.8" fill="#120d1f"/><rect x="-39.4" y="-59.4" width="16.7" height="16.7" rx="3.0" fill="#2ee6d6"/><rect x="8.899999999999999" y="-70" width="38" height="38" rx="6.8" fill="#120d1f"/><rect x="19.5" y="-59.4" width="16.7" height="16.7" rx="3.0" fill="#2ee6d6"/><rect x="-50" y="-11.100000000000001" width="38" height="38" rx="6.8" fill="#120d1f"/><rect x="-39.4" y="-0.5" width="16.7" height="16.7" rx="3.0" fill="#2ee6d6"/><rect x="14.6" y="-5.4" width="26.6" height="26.6" rx="4.6" fill="#120d1f"/></g></g></svg>
+    <div class="sp-word"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1507 178" class="sp-wordmark" aria-label="Schmollster" role="img">
+  <defs><linearGradient id="wgsplash" x1="0" y1="0" x2="511.4" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ff3d8b"/><stop offset="1" stop-color="#ffd23f"/></linearGradient></defs>
+  <g transform="translate(20 154.8)"><path d="M66.20 2.80L66.20 2.80Q53.40 2.80 43 0.40Q32.60-2 25-6.90Q17.40-11.80 13-19.40Q8.60-27 7.80-37L7.80-37L36-46.40Q36.60-38 40.80-32.40Q45-26.80 52.10-24.10Q59.20-21.40 68-21.40L68-21.40Q76.40-21.40 82.10-23.50Q87.80-25.60 90.70-28.90Q93.60-32.20 93.60-36L93.60-36Q93.60-40.40 89.80-43.30Q86-46.20 79.40-48.30Q72.80-50.40 64-52.40L64-52.40Q54-54.80 44.40-57.60Q34.80-60.40 27-64.90Q19.20-69.40 14.70-76.50Q10.20-83.60 10.20-94.40L10.20-94.40Q10.20-106.60 16.40-115.60Q22.60-124.60 34.60-129.70Q46.60-134.80 64.20-134.80L64.20-134.80Q81.60-134.80 93.80-129.80Q106-124.80 112.60-115.90Q119.20-107 119.80-95.20L119.80-95.20L91-87Q91-92.80 89.10-97.20Q87.20-101.60 83.80-104.50Q80.40-107.40 75.40-108.90Q70.40-110.40 64-110.40L64-110.40Q56.40-110.40 51.10-108.60Q45.80-106.80 43.20-103.90Q40.60-101 40.60-97.20L40.60-97.20Q40.60-92.40 44.70-89.30Q48.80-86.20 55.90-84.10Q63-82 71.60-80L71.60-80Q80.20-78.20 89.40-75.50Q98.60-72.80 106.60-68.40Q114.60-64 119.50-56.50Q124.40-49 124.40-37.60L124.40-37.60Q124.40-25.40 117.90-16.30Q111.40-7.20 98.40-2.20Q85.40 2.80 66.20 2.80ZM207.40 2.80L207.40 2.80Q191.80 2.80 179.40-1.40Q167-5.60 158.30-14.20Q149.60-22.80 145.10-35.30Q140.60-47.80 140.60-64.60L140.60-64.60Q140.60-81.80 145.20-94.80Q149.80-107.80 158.50-116.80Q167.20-125.80 179-130.30Q190.80-134.80 205.20-134.80L205.20-134.80Q216.60-134.80 226.10-132Q235.60-129.20 242.60-123.70Q249.60-118.20 253.50-110.50Q257.40-102.80 257.60-93L257.60-93L227.80-84.80Q227.80-93 224.30-98.20Q220.80-103.40 215.50-106.10Q210.20-108.80 204-108.80L204-108.80Q199-108.80 193.70-106.70Q188.40-104.60 184-99.70Q179.60-94.80 177-86.80Q174.40-78.80 174.40-66.80L174.40-66.80Q174.40-51.20 178.80-41.60Q183.20-32 191-27.50Q198.80-23 208.20-23L208.20-23Q218.60-23 224.30-27.50Q230-32 232.40-38.80Q234.80-45.60 235-52.60L235-52.60L263-48.20Q262.80-37.40 259.80-28Q256.80-18.60 250.30-11.70Q243.80-4.80 233.20-1Q222.60 2.80 207.40 2.80ZM400.60 0L368.40 0L368.40-53.60L314.60-53.60L314.60 0L282.40 0L282.40-132L314.60-132L314.60-79.60L368.40-79.60L368.40-132L400.60-132L400.60 0ZM458.40 0L428.40 0L428.40-132L476.60-132L511-37L512-37L545.60-132L591.60-132L591.60 0L561.20 0L563-99.20L560.80-99.20L522.60 0L496.20 0L458.80-99.20L456.60-99.20L458.40 0ZM677.60 2.80L677.60 2.80Q663.20 2.80 651.60-1.60Q640-6 631.70-14.60Q623.40-23.20 619-35.90Q614.60-48.60 614.60-65.40L614.60-65.40Q614.60-89 622.90-104.30Q631.20-119.60 645.80-127.20Q660.40-134.80 678.80-134.80L678.80-134.80Q693-134.80 704.60-130.40Q716.20-126 724.50-117.40Q732.80-108.80 737.30-95.90Q741.80-83 741.80-66.20L741.80-66.20Q741.80-48.80 737.10-35.90Q732.40-23 723.90-14.40Q715.40-5.80 703.60-1.50Q691.80 2.80 677.60 2.80ZM678.60-22.40L678.60-22.40Q688.40-22.40 695.10-27.30Q701.80-32.20 705.30-41.50Q708.80-50.80 708.80-64.20L708.80-64.20Q708.80-78.40 705.20-88.30Q701.60-98.20 694.70-103.30Q687.80-108.40 677.80-108.40L677.80-108.40Q668.20-108.40 661.50-103.50Q654.80-98.60 651.20-89.10Q647.60-79.60 647.60-65.80L647.60-65.80Q647.60-55.40 649.70-47.30Q651.80-39.20 655.60-33.70Q659.40-28.20 665.30-25.30Q671.20-22.40 678.60-22.40ZM850.40 0L764.40 0L764.40-132L796.60-132L796.60-27L850.40-27L850.40 0ZM952.20 0L866.20 0L866.20-132L898.40-132L898.40-27L952.20-27L952.20 0Z" fill="#f4f0ff"/></g>
+  <g transform="translate(975.2 154.8)"><path d="M66.20 2.80L66.20 2.80Q53.40 2.80 43 0.40Q32.60-2 25-6.90Q17.40-11.80 13-19.40Q8.60-27 7.80-37L7.80-37L36-46.40Q36.60-38 40.80-32.40Q45-26.80 52.10-24.10Q59.20-21.40 68-21.40L68-21.40Q76.40-21.40 82.10-23.50Q87.80-25.60 90.70-28.90Q93.60-32.20 93.60-36L93.60-36Q93.60-40.40 89.80-43.30Q86-46.20 79.40-48.30Q72.80-50.40 64-52.40L64-52.40Q54-54.80 44.40-57.60Q34.80-60.40 27-64.90Q19.20-69.40 14.70-76.50Q10.20-83.60 10.20-94.40L10.20-94.40Q10.20-106.60 16.40-115.60Q22.60-124.60 34.60-129.70Q46.60-134.80 64.20-134.80L64.20-134.80Q81.60-134.80 93.80-129.80Q106-124.80 112.60-115.90Q119.20-107 119.80-95.20L119.80-95.20L91-87Q91-92.80 89.10-97.20Q87.20-101.60 83.80-104.50Q80.40-107.40 75.40-108.90Q70.40-110.40 64-110.40L64-110.40Q56.40-110.40 51.10-108.60Q45.80-106.80 43.20-103.90Q40.60-101 40.60-97.20L40.60-97.20Q40.60-92.40 44.70-89.30Q48.80-86.20 55.90-84.10Q63-82 71.60-80L71.60-80Q80.20-78.20 89.40-75.50Q98.60-72.80 106.60-68.40Q114.60-64 119.50-56.50Q124.40-49 124.40-37.60L124.40-37.60Q124.40-25.40 117.90-16.30Q111.40-7.20 98.40-2.20Q85.40 2.80 66.20 2.80ZM205.60 0L173.20 0L173.20-105.20L134.80-105.20L134.80-132L244.40-132L244.40-105.20L205.60-105.20L205.60 0ZM366 0L261.20 0L261.20-132L365.40-132L365.40-106.20L293.60-106.20L293.60-78.20L355.80-78.20L355.80-54.80L293.60-54.80L293.60-26L366-26L366 0ZM419.80 0L387.60 0L387.60-132L443.80-132Q454.80-132 463.80-130.30Q472.80-128.60 479.70-125.30Q486.60-122 491.40-117.30Q496.20-112.60 498.60-106.50Q501-100.40 501-93L501-93Q501-86 498.80-80.40Q496.60-74.80 492.10-70.60Q487.60-66.40 480.80-63.80Q474-61.20 465-60L465-60L465-57Q476.40-55.80 482.70-51.90Q489-48 492.40-41.60Q495.80-35.20 498.40-26.20L498.40-26.20L506 0L470.20 0L464.40-24.20Q462.60-32.20 459.50-36.60Q456.40-41 451.60-42.70Q446.80-44.40 439.60-44.40L439.60-44.40L419.80-44.40L419.80 0ZM419.80-107.60L419.80-68.20L441.60-68.20Q453.80-68.20 460.60-73Q467.40-77.80 467.40-88L467.40-88Q467.40-98 461.20-102.80Q455-107.60 442.40-107.60L442.40-107.60L419.80-107.60Z" fill="url(#wgsplash)"/></g></svg></div>
+    <div class="eq sp-eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="sp-skip">Tippen zum Überspringen</div>
+</div>
+<div class="floaters" id="floaters" aria-hidden="true"></div>
 <header class="top">
   <button class="icon" id="btn-back" aria-label="Zurück" hidden>←</button>
   <div class="brand" id="brand">SCHMOLL<span>STER</span></div>
@@ -150,16 +243,40 @@
 
   <!-- ============ START ============ -->
   <section class="view" id="v-home">
-    <h1 id="hello">Bereit für eine Runde?</h1>
-    <p class="muted" id="login-state"></p>
+    <div class="hero">
+      <svg class="hero-mark" viewBox="0 0 512 512" aria-hidden="true"><defs>
+<linearGradient id="hmbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#241a40"/><stop offset="1" stop-color="#120d1f"/></linearGradient>
+<radialGradient id="hmglow" cx="0.38" cy="0.36" r="0.6"><stop offset="0" stop-color="#ff3d8b" stop-opacity="0.35"/><stop offset="1" stop-color="#ff3d8b" stop-opacity="0"/></radialGradient>
+<linearGradient id="hmlab" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff3d8b"/><stop offset="0.55" stop-color="#ff8a1f"/><stop offset="1" stop-color="#ffd23f"/></linearGradient>
+<linearGradient id="hmshine" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+<rect width="512" height="512" rx="116" fill="url(#hmbg)"/><rect width="512" height="512" rx="116" fill="url(#hmglow)"/><g transform="translate(218 222)"><g class="hm-vin-in"><g class="hm-vin"><circle r="182" fill="#0c0a10"/><circle r="176" fill="none" stroke="#2b2534" stroke-width="3"/><circle r="160" fill="none" stroke="#2b2534" stroke-width="3"/><circle r="144" fill="none" stroke="#2b2534" stroke-width="3"/><circle r="128" fill="none" stroke="#2b2534" stroke-width="3"/><circle r="112" fill="none" stroke="#2b2534" stroke-width="3"/>
+<circle r="74" fill="url(#hmlab)"/><circle cx="0" cy="-48" r="7" fill="#fff" opacity=".35"/><circle r="11" fill="#0c0a10"/></g>
+<path d="M -150 -40 A 156 156 0 0 1 -40 -150" fill="none" stroke="url(#hmshine)" stroke-width="14" stroke-linecap="round"/></g></g>
+<g transform="translate(372 368) rotate(12)"><g class="hm-card"><rect x="-78" y="-98" width="156" height="196" rx="22" fill="#120d1f" opacity="0.55" transform="translate(6 8)"/><rect x="-78" y="-98" width="156" height="196" rx="22" fill="#2ee6d6"/><rect x="-50" y="-70" width="38" height="38" rx="6.8" fill="#120d1f"/><rect x="-39.4" y="-59.4" width="16.7" height="16.7" rx="3.0" fill="#2ee6d6"/><rect x="8.899999999999999" y="-70" width="38" height="38" rx="6.8" fill="#120d1f"/><rect x="19.5" y="-59.4" width="16.7" height="16.7" rx="3.0" fill="#2ee6d6"/><rect x="-50" y="-11.100000000000001" width="38" height="38" rx="6.8" fill="#120d1f"/><rect x="-39.4" y="-0.5" width="16.7" height="16.7" rx="3.0" fill="#2ee6d6"/><rect x="14.6" y="-5.4" width="26.6" height="26.6" rx="4.6" fill="#120d1f"/></g></g></svg>
+      <h1 id="hello">Bereit für eine Runde?</h1>
+      <p class="tagline">Hör rein. Rate das Jahr. Bau deine Zeitleiste.</p>
+      <div class="eq hero-eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <p class="muted" id="login-state"></p>
+    </div>
     <div class="home-grid">
       <button class="tile play" id="go-play"><h2>Spielen</h2><p>Karte scannen – Song läuft auf deinem Spotify, ohne Titel zu verraten.</p><span class="glyph">▶</span></button>
       <button class="tile make" id="go-create"><h2>Karten erstellen</h2><p>Playlist-Link einfügen, Liste prüfen, Druckbogen als PDF.</p><span class="glyph">▦</span></button>
     </div>
+    <button class="last-set" id="last-set" hidden></button>
     <div id="login-box" class="panel" style="display:none">
       <p>Du bist noch nicht bei Spotify angemeldet.</p>
       <button class="btn pink" id="btn-login">Mit Spotify anmelden</button>
     </div>
+    <details class="rules panel">
+      <summary>So wird gespielt</summary>
+      <ol class="steps small">
+        <li>Jede Person bekommt eine Karte offen vor sich gelegt – das ist der Anfang ihrer Zeitleiste.</li>
+        <li>Wer dran ist, scannt die nächste Karte vom Stapel (Jahr nach unten) und hört in den Song rein.</li>
+        <li>Die Karte an die passende Stelle der eigenen Zeitleiste legen: vor, hinter oder zwischen die Karten, die schon liegen.</li>
+        <li>Umdrehen! Passt die Position, bleibt die Karte liegen – sonst kommt sie aus dem Spiel.</li>
+        <li>Wer zuerst 10 Karten richtig in seiner Zeitleiste hat, gewinnt. Für Profis: zusätzlich Interpret und Titel nennen.</li>
+      </ol>
+    </details>
   </section>
 
   <!-- ============ KARTEN ERSTELLEN ============ -->
@@ -330,6 +447,7 @@ function show(view) {
   if (currentView === 'play' && view !== 'play') releaseWakeLock();
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + view));
   currentView = view;
+  document.body.classList.toggle('on-home', view === 'home');
   $('btn-back').hidden = !backTarget[view];
   $('btn-settings').hidden = view === 'setup' || view === 'settings';
   window.scrollTo(0, 0);
@@ -438,15 +556,35 @@ function renderSetup() {
   $('setup-note').textContent = note.join(' ');
   show('setup');
 }
+function renderLastSet() {
+  const set = getSet(), b = $('last-set');
+  if (!set || !set.songs) { b.hidden = true; return; }
+  const n = set.songs.filter(x => x.include).length;
+  b.hidden = false;
+  b.innerHTML = `<span class="ls-icon">${set.icon && ICONS[set.icon] ? iconSVG(set.icon, 'currentColor', 'var(--icon-bg)') : '▦'}</span>
+    <span class="ls-text"><small>Zuletzt erstellt</small><b>${esc(set.edition || set.name)}</b><small>${n} Karten</small></span><span class="ls-go">›</span>`;
+}
+function startFloaters() {
+  const box = $('floaters'); if (box.childElementCount) return;
+  const keys = Object.keys(ICONS), cols = ['#ff3d8b', '#2ee6d6', '#ffd23f', '#b98cff'];
+  let html = '';
+  for (let i = 0; i < 14; i++) {
+    const k = keys[i % keys.length], dur = 22 + Math.random() * 18, size = 26 + Math.random() * 26;
+    html += `<span style="left:${(i * 7.3 + Math.random() * 5) % 100}%;width:${size}px;height:${size * 1.2}px;color:${cols[i % 4]};animation-duration:${dur}s;animation-delay:${-Math.random() * dur}s;--rot:${(Math.random() < .5 ? -1 : 1) * (90 + Math.random() * 180)}deg">${iconSVG(k, 'currentColor', 'var(--bg)')}</span>`;
+  }
+  box.innerHTML = html;
+}
 async function renderHome() {
   show('home');
+  renderLastSet(); startFloaters();
   const box = $('login-box');
   if (!loggedIn()) { box.style.display = 'block'; $('login-state').textContent = ''; return; }
   box.style.display = 'none';
   try {
     const me = store.get('hs_me') || await api('GET', '/me');
     store.set('hs_me', { display_name: me.display_name, id: me.id });
-    $('hello').textContent = 'Hey ' + (me.display_name || '').split(' ')[0] + ', bereit für eine Runde?';
+    const first = (me.display_name || '').split(' ')[0];
+    $('hello').textContent = first ? 'Hey ' + first + ', bereit für eine Runde?' : 'Bereit für eine Runde?';
   } catch (e) { if (e instanceof NeedLogin) { box.style.display = 'block'; } }
 }
 function renderSettings() {
@@ -489,8 +627,8 @@ function norm(s) {
 
 /* ---------- Klassik ---------- */
 // Klassik erkennen: Werkverzeichnis-Nummer im Titel (Op., BWV, KV …) – oder Gattungswort + mehrere Künstler
-const CATALOG_TEST = /\b(op(us)?\.?\s*\d|bwv\s*\d|kv\s*\d|k\.\s*\d|hob\.\s*[ivxlc]|woo\s*\d|trv\s*\d|rv\s*\d|hwv\s*\d|sz\.?\s*\d|d\.\s*\d{2,})/i;
-const GENRE_TEST = /symphon|sinfonie|concerto|konzert f|klavierkonzert|violinkonzert|sonat[ae]\b|ouvert[uü]re|overture|pr[ée]lud|fugue|\bfuge\b|requiem|\bmesse\b|\bmass in\b|nocturne|[ée]tude|serenade|divertimento|quartet|streichquartett|kantate|cantata|oratori|tondichtung|symphonic poem|impromptu|mazurka|polonaise|scherzo|adagio|allegro|andante|\blargo\b/i;
+const CATALOG_TEST = /\b(op(us)?\.?\s*\d|bwv\s*\d|kv\s*\d|k\.\s*\d|hob\.\s*[ivxlc]|woo\s*\d|trv\s*\d|rv\s*\d|hwv\s*\d|sz\.?\s*\d|d\.\s*\d{2,})|(?:^|[\s,(])соч\.?\s*\d/i;
+const GENRE_TEST = /symphon|sinfonie|concerto|konzert f|klavierkonzert|violinkonzert|sonat[ae]\b|ouvert[uü]re|overture|pr[ée]lud|fugue|\bfuge\b|requiem|\bmesse\b|\bmass in\b|nocturne|[ée]tude|serenade|divertimento|quartet|streichquartett|kantate|cantata|oratori|tondichtung|symphonic poem|impromptu|mazurka|polonaise|scherzo|adagio|allegro|andante|\blargo\b|симфон|концерт|сонат|увертюр|сюит/i;
 function isClassical(title, artists) {
   if (CATALOG_TEST.test(title || '')) return 'cat';
   if (GENRE_TEST.test(title || '') && (artists || []).length >= 2) return 'genre';
@@ -753,7 +891,28 @@ function fileName(n) { return 'Schmollster-' + (n || 'Karten').replace(/[^\w\-ä
    ========================================================= */
 // Standard-PDF-Schrift kann nur Windows-1252-Zeichen – alles andere wird vereinfacht
 const CP1252_EXTRA = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
+let pdfFont = 'NotoSans'; // Standard; 'helvetica' nur als Notlösung, falls die Schrift nicht geladen werden kann
+const NOTO = 'https://cdn.jsdelivr.net/npm/@expo-google-fonts/noto-sans@0.4.2/';
+const NOTO_FILES = { normal: '400Regular/NotoSans_400Regular.ttf', bold: '700Bold/NotoSans_700Bold.ttf', italic: '400Regular_Italic/NotoSans_400Regular_Italic.ttf' };
+const fontCache = {};
+function needsUnicode(str) {
+  for (const ch of String(str || '')) { const c = ch.codePointAt(0); if (!((c >= 32 && c <= 126) || (c >= 160 && c <= 255) || CP1252_EXTRA.includes(ch))) return true; }
+  return false;
+}
+async function addNotoSans(doc) {
+  for (const [style, file] of Object.entries(NOTO_FILES)) {
+    if (!fontCache[style]) {
+      const r = await fetch(NOTO + file); if (!r.ok) throw new Error('Schrift für Sonderzeichen konnte nicht geladen werden.');
+      const bytes = new Uint8Array(await r.arrayBuffer()); let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      fontCache[style] = btoa(bin);
+    }
+    doc.addFileToVFS('NotoSans-' + style + '.ttf', fontCache[style]);
+    doc.addFont('NotoSans-' + style + '.ttf', 'NotoSans', style);
+  }
+}
 function pdfSafe(str) {
+  if (pdfFont !== 'helvetica') return String(str || '');
   let out = '';
   for (const ch of String(str || '')) {
     const c = ch.codePointAt(0);
@@ -781,7 +940,7 @@ function decadeColor(y) {
 }
 function fitLines(doc, text, maxW, sizes, maxLines, style) {
   for (const size of sizes) {
-    doc.setFont('helvetica', style); doc.setFontSize(size);
+    doc.setFont(pdfFont, style); doc.setFontSize(size);
     const lines = doc.splitTextToSize(text, maxW);
     if (lines.length <= maxLines) return { lines, size };
   }
@@ -812,7 +971,20 @@ const ICONS = {
   blitz: { name: 'Blitz', cat: 'Rock & Metal', ops: [
     poly([[.62, .04], [.14, .68], [.46, .68], [.34, 1.16], [.86, .5], [.55, .5], [.74, .04]])
   ] },
-  krone: { name: 'Krone', cat: 'Klassik', ops: [
+  cello: { name: 'Cello', cat: 'Klassik', ops: [
+    { t: 'line', stroke: 'fg', w: .035, x1: .5, y1: 1.1, x2: .5, y2: 1.19 },
+    { t: 'rect', fill: 'fg', x: .455, y: .1, w: .09, h: .42, r: .02 },
+    { t: 'circle', fill: 'fg', cx: .5, cy: .08, r: .07 },
+    { t: 'line', stroke: 'fg', w: .04, x1: .4, y1: .17, x2: .6, y2: .17 },
+    { t: 'line', stroke: 'fg', w: .04, x1: .4, y1: .26, x2: .6, y2: .26 },
+    { t: 'path', fill: 'fg', d: [['M', 0.5, 0.42], ['C', 0.65, 0.42, 0.825, 0.45, 0.825, 0.55], ['C', 0.825, 0.64, 0.7, 0.66, 0.713, 0.74], ['C', 0.725, 0.8, 0.888, 0.84, 0.888, 0.95],
+      ['C', 0.888, 1.06, 0.7, 1.11, 0.5, 1.11], ['C', 0.3, 1.11, 0.112, 1.06, 0.112, 0.95], ['C', 0.112, 0.84, 0.275, 0.8, 0.288, 0.74], ['C', 0.3, 0.66, 0.175, 0.64, 0.175, 0.55], ['C', 0.175, 0.45, 0.35, 0.42, 0.5, 0.42], ['Z']] },
+    { t: 'line', stroke: 'bg', w: .07, x1: .5, y1: .44, x2: .5, y2: .8 },
+    { t: 'path', stroke: 'bg', w: .035, d: [['M', 0.35, 0.72], ['C', 0.312, 0.78, 0.387, 0.82, 0.338, 0.89]] },
+    { t: 'path', stroke: 'bg', w: .035, d: [['M', 0.65, 0.72], ['C', 0.688, 0.78, 0.612, 0.82, 0.662, 0.89]] },
+    { t: 'line', stroke: 'bg', w: .04, x1: .4, y1: .86, x2: .6, y2: .86 }
+  ] },
+  krone: { name: 'Krone', cat: 'Legenden & Evergreens', ops: [
     poly([[.04, .92], [.04, .38], [.3, .62], [.5, .26], [.7, .62], [.96, .38], [.96, .92]]),
     { t: 'rect', fill: 'fg', x: .04, y: .97, w: .92, h: .15, r: .03 },
     { t: 'circle', fill: 'fg', cx: .04, cy: .33, r: .07 }, { t: 'circle', fill: 'fg', cx: .5, cy: .2, r: .08 }, { t: 'circle', fill: 'fg', cx: .96, cy: .33, r: .07 },
@@ -863,6 +1035,13 @@ const ICONS = {
     poly([[.2, .8], [.48, .8], [.12, 1.1]]),
     { t: 'text', fill: 'bg', x: .5, y: .51, s: .42, txt: 'DE' }
   ] },
+  balalaika: { name: 'Balalaika', cat: 'Russischsprachig', ops: [
+    { t: 'rect', fill: 'fg', x: .4, y: 0, w: .2, h: .13, r: .03 },
+    { t: 'rect', fill: 'fg', x: .455, y: .08, w: .09, h: .48, r: .02 },
+    { t: 'path', fill: 'fg', d: [['M', .5, .46], ['C', .62, .6, .86, .9, .94, 1.05], ['C', .97, 1.12, .93, 1.17, .86, 1.17], ['L', .14, 1.17], ['C', .07, 1.17, .03, 1.12, .06, 1.05], ['C', .14, .9, .38, .6, .5, .46], ['Z']] },
+    { t: 'circle', fill: 'bg', cx: .5, cy: .88, r: .075 },
+    { t: 'line', stroke: 'bg', w: .045, x1: .38, y1: 1.06, x2: .62, y2: 1.06 }
+  ] },
   note: { name: 'Musiknote', cat: 'Gemischt / Sonstiges', ops: [
     { t: 'path', fill: 'fg', d: [['M', .38, .08], ['L', .92, 0], ['L', .92, .2], ['L', .46, .27], ['Z']] },
     { t: 'line', stroke: 'fg', w: .08, x1: .42, y1: .14, x2: .42, y2: .92 },
@@ -910,7 +1089,7 @@ function drawIcon(doc, key, x, y, h, fg, bg) {
     else if (o.t === 'rect') doc.roundedRect(X(o.x), Y(o.y), o.w * k, o.h * k, (o.r || 0) * k, (o.r || 0) * k, style);
     else if (o.t === 'line') doc.line(X(o.x1), Y(o.y1), X(o.x2), Y(o.y2));
     else if (o.t === 'text') {
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(o.s * k / PT); doc.setTextColor(...col(o.fill));
+      doc.setFont(pdfFont, 'bold'); doc.setFontSize(o.s * k / PT); doc.setTextColor(...col(o.fill));
       doc.text(o.txt, X(o.x), Y(o.y), { align: 'center', baseline: 'middle' });
     }
   }
@@ -936,7 +1115,7 @@ function drawFront(doc, s, x, y, S, styleName, perfMode, iconKey) {
   const perf = pm && perfMode !== 'none' ? pdfSafe('(' + pm[2] + ')') : '';
   if (!perf) {
     const a = fitLines(doc, mainA, maxW, [13, 12, 11, 10, 9, 8], 3, 'bold');
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(a.size);
+    doc.setFont(pdfFont, 'bold'); doc.setFontSize(a.size);
     const lhA = a.size * PT * 1.18;
     a.lines.forEach((l, i) => doc.text(l, cx, y + 10 + i * lhA, { align: 'center', baseline: 'top' }));
   } else { // Komponist fett, Interpreten klein darunter – zusammen max. ~14,5 mm hoch
@@ -948,20 +1127,20 @@ function drawFront(doc, s, x, y, S, styleName, perfMode, iconKey) {
       best = { a, p, sa, sp }; if (h <= 14.5) break outer;
     }
     const lhA = best.sa * PT * 1.18, lhP = best.sp * PT * 1.18;
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(best.sa);
+    doc.setFont(pdfFont, 'bold'); doc.setFontSize(best.sa);
     best.a.lines.forEach((l, i) => doc.text(l, cx, y + 10 + i * lhA, { align: 'center', baseline: 'top' }));
     const py = y + 10 + best.a.lines.length * lhA + 0.8;
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(best.sp);
+    doc.setFont(pdfFont, 'normal'); doc.setFontSize(best.sp);
     best.p.lines.forEach((l, i) => doc.text(l, cx, py + i * lhP, { align: 'center', baseline: 'top' }));
   }
   // Jahr in der Mitte
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(46);
+  doc.setFont(pdfFont, 'bold'); doc.setFontSize(46);
   if (!colored) doc.setTextColor(...col);
   doc.text(String(s.year || '????'), cx, y + S / 2, { align: 'center', baseline: 'middle' });
   // Titel unten
   doc.setTextColor(...fg);
   const t = fitLines(doc, pdfSafe(s.title), maxW, [12, 11, 10, 9, 8], 3, 'italic');
-  doc.setFont('helvetica', 'italic'); doc.setFontSize(t.size);
+  doc.setFont(pdfFont, 'italic'); doc.setFontSize(t.size);
   const lhT = t.size * PT * 1.18;
   const startT = y + S - 9 - t.lines.length * lhT;
   t.lines.forEach((l, i) => doc.text(l, cx, startT + i * lhT, { align: 'center', baseline: 'top' }));
@@ -1008,6 +1187,14 @@ async function makePdf() {
     await Promise.all([loadScript(CDN.jspdf), loadScript(CDN.qrcode)]);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
+    // Standardschrift für alle Editionen: Noto Sans (kann auch Kyrillisch, Griechisch, Polnisch …)
+    btn.textContent = 'Lade Schrift…';
+    try { await addNotoSans(doc); pdfFont = 'NotoSans'; }
+    catch (err) {
+      if (cards.some(s => needsUnicode(s.artist) || needsUnicode(s.title))) throw err;
+      pdfFont = 'helvetica'; toast('Schrift konnte nicht geladen werden – Ersatzschrift verwendet.', 4500);
+    }
+    btn.textContent = 'Erstelle PDF…';
     doc.setProperties({ title: 'Schmollster – ' + set.name, creator: 'Schmollster' });
     const S = 65, COLS = 3, ROWS = 4, PER = COLS * ROWS;
     const MX = (210 - COLS * S) / 2, MY = (297 - ROWS * S) / 2;
@@ -1259,6 +1446,7 @@ function wire() {
   $('btn-login').onclick = () => login('home');
   $('go-play').onclick = () => { show('play'); renderPlayButtons(); };
   $('go-create').onclick = openCreate;
+  $('last-set').onclick = renderReview;
   $('btn-load').onclick = loadPlaylist;
   $('pl-input').addEventListener('keydown', e => { if (e.key === 'Enter') loadPlaylist(); });
   $('btn-skip-mb').onclick = () => { skipMb = true; toast('Prüfung wird übersprungen…'); };
@@ -1302,8 +1490,23 @@ function openCreate() {
   const pend = store.get('hs_pending_pl'); if (pend) { $('pl-input').value = pend; store.del('hs_pending_pl'); }
 }
 
+/* ---------- Intro-Animation ---------- */
+function playSplash() {
+  const sp = $('splash');
+  let done = false;
+  const hide = () => { if (done) return; done = true; sp.classList.add('out'); setTimeout(() => sp.classList.remove('on', 'out'), 480); };
+  sp.classList.add('on');
+  sp.addEventListener('click', hide, { once: true });
+  setTimeout(hide, 2800);
+  try { sessionStorage.setItem('hs_intro', '1'); } catch {}
+}
 async function boot() {
   wire();
+  { // Intro nur beim normalen Öffnen – nicht beim Scannen einer Karte oder nach dem Spotify-Login
+    let seen = false; try { seen = sessionStorage.getItem('hs_intro') === '1'; } catch {}
+    const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!seen && !reduce && !parseTrack(location.hash) && !location.search.includes('code=')) playSplash();
+  }
   const q = new URLSearchParams(location.search);
   const h = new URLSearchParams(location.hash.slice(1));
   if (h.get('cid') && /^[a-f0-9]{32}$/i.test(h.get('cid'))) { if (h.get('cid') !== clientId()) { store.del('hs_tok'); store.del('hs_me'); } store.set('hs_cid', h.get('cid')); toast('Eingerichtet ✓ – jetzt noch bei Spotify anmelden.'); }
