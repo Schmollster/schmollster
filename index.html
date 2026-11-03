@@ -105,6 +105,9 @@
   #toast.on{transform:translateX(-50%) translateY(0)}
   .err{color:var(--bad)}
   details summary{cursor:pointer;color:var(--cyan)}
+  .fs-btn{min-height:40px;padding:8px 16px;font-size:14px}
+  .fs-btn[hidden]{display:none}
+  :fullscreen body,:fullscreen{background-color:var(--bg)}
   /* ---------- Intro-Animation ---------- */
   #splash{position:fixed;inset:0;z-index:50;display:none;place-items:center;background:radial-gradient(800px 500px at 50% 40%,#3a1450 0,transparent 70%),var(--bg);overflow:hidden;cursor:pointer}
   #splash.on{display:grid}
@@ -356,6 +359,7 @@
           <button class="btn ghost" id="btn-diag-copy" style="min-height:36px;padding:8px 14px">Details kopieren</button>
         </details>
       </div>
+      <button class="btn ghost fs-btn" id="btn-fs" hidden>⛶ Vollbild</button>
       <div class="row small muted" style="justify-content:center">
         <span>Automatisch stoppen nach</span>
         <select id="autostop" style="width:auto;padding:6px 10px">
@@ -376,6 +380,10 @@
       <h2 style="margin-top:0">Handy einrichten</h2>
       <p class="small muted">Scanne diesen Code mit der Handykamera. Dann ist die Seite auf dem Handy direkt eingerichtet, und du musst dich dort nur noch bei Spotify anmelden. Tipp: Danach im Chrome-Menü „Zum Startbildschirm hinzufügen“ wählen.</p>
       <div class="qrbox" id="setup-qr"></div>
+    </div>
+    <div class="panel" id="fs-setting">
+      <h2 style="margin-top:0">Spielen</h2>
+      <label class="chk small"><input type="checkbox" id="autofs"><span><b>Beim Spielen automatisch Vollbild.</b> Blendet auf dem Handy die Leiste oben aus, in der Android den gerade laufenden Song anzeigt. Zum Beenden: Vollbild-Knopf im Spielbildschirm oder Zurück-Geste.</span></label>
     </div>
     <div class="panel">
       <p class="small">Angemeldet als: <b id="set-user">–</b></p>
@@ -444,14 +452,14 @@ async function copyText(t) {
 let currentView = null;
 const backTarget = { create: 'home', review: 'create', play: 'home', settings: 'home' };
 function show(view) {
-  if (currentView === 'play' && view !== 'play') releaseWakeLock();
+  if (currentView === 'play' && view !== 'play') { releaseWakeLock(); exitFs(); fsOptOut = false; }
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + view));
   currentView = view;
   document.body.classList.toggle('on-home', view === 'home');
   $('btn-back').hidden = !backTarget[view];
   $('btn-settings').hidden = view === 'setup' || view === 'settings';
   window.scrollTo(0, 0);
-  if (view === 'play') requestWakeLock();
+  if (view === 'play') { requestWakeLock(); renderFsBtn(); }
 }
 
 /* =========================================================
@@ -1419,6 +1427,26 @@ function stopScan() {
   scanStream = null; $('scanner').classList.remove('on');
 }
 
+/* ---------- Vollbild (versteckt die Android-Statusleiste mit dem Songtitel) ---------- */
+const fsSupported = () => !!(document.fullscreenEnabled && document.documentElement.requestFullscreen);
+const isFs = () => !!document.fullscreenElement;
+const autoFs = () => store.get('hs_autofs', true);
+async function enterFs() {
+  if (!fsSupported() || isFs()) return;
+  try { await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch {}
+}
+let fsInternalExit = false, fsOptOut = false; // fsOptOut: Nutzer hat Vollbild selbst beendet → nicht ungefragt wieder einschalten
+async function exitFs() { if (isFs()) { fsInternalExit = true; try { await document.exitFullscreen(); } catch {} } }
+function renderFsBtn() {
+  const b = $('btn-fs'); if (!b) return;
+  if (!fsSupported()) { b.hidden = true; return; }
+  b.hidden = false; b.textContent = isFs() ? '✕ Vollbild beenden' : '⛶ Vollbild';
+}
+document.addEventListener('fullscreenchange', () => {
+  if (!isFs() && currentView === 'play' && !fsInternalExit) fsOptOut = true;
+  fsInternalExit = false; renderFsBtn();
+});
+
 /* ---------- Bildschirm anlassen beim Spielen ---------- */
 let wakeLock = null;
 async function requestWakeLock() { try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); } } catch {} }
@@ -1444,7 +1472,13 @@ function wire() {
     store.set('hs_cid', v); login('home');
   };
   $('btn-login').onclick = () => login('home');
-  $('go-play').onclick = () => { show('play'); renderPlayButtons(); };
+  $('go-play').onclick = () => { if (autoFs()) enterFs(); show('play'); renderPlayButtons(); renderFsBtn(); };
+  $('btn-fs').onclick = e => { e.stopPropagation(); if (isFs()) { exitFs(); fsOptOut = true; } else { fsOptOut = false; enterFs(); } };
+  // Seite per Kamera-Scan geöffnet: beim ersten Antippen im Spielbildschirm ins Vollbild
+  $('v-play').addEventListener('click', () => { if (autoFs() && !isFs() && !fsOptOut) enterFs(); });
+  $('autofs').checked = autoFs();
+  $('autofs').onchange = () => store.set('hs_autofs', $('autofs').checked);
+  if (!fsSupported()) $('fs-setting').style.display = 'none';
   $('go-create').onclick = openCreate;
   $('last-set').onclick = renderReview;
   $('btn-load').onclick = loadPlaylist;
@@ -1463,7 +1497,7 @@ function wire() {
     const b = e.target.closest('.icon-opt'); if (!b) return;
     const s = getSet(); s.icon = b.dataset.k; saveSet(s); renderIconGrid(s.icon);
   });
-  $('btn-scan').onclick = startScan;
+  $('btn-scan').onclick = () => { if (autoFs() && !fsOptOut) enterFs(); startScan(); };
   $('btn-scan-cancel').onclick = stopScan;
   $('btn-toggle').onclick = togglePlay;
   $('btn-restart').onclick = () => player.track && playTrack(player.track);
