@@ -105,6 +105,13 @@
   #toast.on{transform:translateX(-50%) translateY(0)}
   .err{color:var(--bad)}
   details summary{cursor:pointer;color:var(--cyan)}
+  .icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:6px}
+  .icon-opt{--icon-bg:var(--bg2);background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 6px 8px;color:var(--text);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;font:inherit;font-size:13px;line-height:1.2;text-align:center;min-height:96px}
+  .icon-opt svg{width:30px;height:36px;flex:none}
+  .icon-opt small{color:var(--muted);font-size:11px}
+  .icon-opt .none{width:30px;height:36px;display:grid;place-items:center;font-size:22px;color:var(--muted)}
+  .icon-opt.sel{--icon-bg:#3a1f4a;background:#3a1f4a;border-color:var(--pink);box-shadow:0 0 0 1px var(--pink) inset}
+  .icon-opt:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
 </style>
 </head>
 <body>
@@ -189,7 +196,7 @@
     <div class="songs" id="songs"></div>
     <div class="panel">
       <h2 style="margin-top:0">Druckbogen</h2>
-      <p class="small muted">Name der Edition (steht klein auf der Rückseite):</p>
+      <p class="small muted">Name der Edition (nur für den Dateinamen – die Rückseiten sind bei allen Editionen gleich):</p>
       <input type="text" id="edition" maxlength="40">
       <p class="small muted" style="margin-top:12px">Druckstil:</p>
       <select id="style">
@@ -201,6 +208,8 @@
         <option value="paren">Komponist groß, Interpreten klein in Klammern</option>
         <option value="none">Nur den Komponisten drucken</option>
       </select>
+      <p class="small muted" style="margin-top:12px">Symbol für diese Edition – kommt klein oben rechts auf die Vorderseite, damit du gemischte Stapel wieder auseinandersortieren kannst:</p>
+      <div class="icon-grid" id="icon-grid"></div>
       <div class="row" style="margin-top:14px">
         <button class="btn pink" id="btn-pdf">PDF erstellen</button>
         <button class="btn ghost" id="btn-csv">Liste als CSV speichern</button>
@@ -675,7 +684,13 @@ function renderReview() {
   $('edition').value = set.edition || set.name;
   $('style').value = set.style || 'color';
   $('perf').value = set.perf || 'paren';
+  renderIconGrid(set.icon || '');
   drawSongs();
+}
+function renderIconGrid(sel) {
+  const opts = [['', 'Kein Symbol', '']].concat(Object.entries(ICONS).map(([k, v]) => [k, v.name, v.cat]));
+  $('icon-grid').innerHTML = opts.map(([k, name, cat]) =>
+    `<button type="button" class="icon-opt${k === sel ? ' sel' : ''}" data-k="${k}" aria-pressed="${k === sel}">${k ? iconSVG(k, 'currentColor', 'var(--icon-bg)') : '<span class="none">∅</span>'}<span>${esc(name)}</span>${cat ? `<small>${esc(cat)}</small>` : ''}</button>`).join('');
 }
 function drawSongs() {
   const set = getSet(); const only = $('only-flagged').checked;
@@ -776,11 +791,142 @@ function fitLines(doc, text, maxW, sizes, maxLines, style) {
   return { lines, size };
 }
 const PT = 0.3528; // mm pro Punkt
-function drawFront(doc, s, x, y, S, styleName, perfMode) {
+/* =========================================================
+   Editions-Symbole (oben rechts auf der Vorderseite)
+   Jedes Symbol liegt in einem Feld 1 breit × 1,2 hoch.
+   fg = Symbolfarbe, bg = Detailfarbe (Kartenfarbe)
+   ========================================================= */
+const poly = (pts, fill = 'fg') => ({ t: 'path', fill, d: [['M', ...pts[0]], ...pts.slice(1).map(p => ['L', ...p]), ['Z']] });
+const ICONS = {
+  herzballon: { name: 'Herz-Ballon', cat: 'Liebeslieder', ops: [
+    { t: 'path', fill: 'fg', d: [['M', .5, .17], ['C', .46, .07, .38, 0, .27, 0], ['C', .12, 0, 0, .1, 0, .28], ['C', 0, .45, .15, .62, .5, .88], ['C', .85, .62, 1, .45, 1, .28], ['C', 1, .1, .88, 0, .73, 0], ['C', .62, 0, .54, .07, .5, .17], ['Z']] },
+    { t: 'path', stroke: 'bg', w: .045, d: [['M', .33, .04], ['C', .26, .3, .32, .6, .5, .86]] },
+    { t: 'path', stroke: 'bg', w: .045, d: [['M', .67, .04], ['C', .74, .3, .68, .6, .5, .86]] },
+    { t: 'line', stroke: 'fg', w: .04, x1: .3, y1: .72, x2: .41, y2: 1.02 },
+    { t: 'line', stroke: 'fg', w: .04, x1: .7, y1: .72, x2: .59, y2: 1.02 },
+    { t: 'rect', fill: 'fg', x: .39, y: 1, w: .22, h: .18, r: .04 }
+  ] },
+  stern: { name: 'Stern', cat: 'Pop & Charts', ops: [
+    poly(Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? .21 : .52; return [.5 + r * Math.cos(a), .64 + r * Math.sin(a)]; }))
+  ] },
+  blitz: { name: 'Blitz', cat: 'Rock & Metal', ops: [
+    poly([[.62, .04], [.14, .68], [.46, .68], [.34, 1.16], [.86, .5], [.55, .5], [.74, .04]])
+  ] },
+  krone: { name: 'Krone', cat: 'Klassik', ops: [
+    poly([[.04, .92], [.04, .38], [.3, .62], [.5, .26], [.7, .62], [.96, .38], [.96, .92]]),
+    { t: 'rect', fill: 'fg', x: .04, y: .97, w: .92, h: .15, r: .03 },
+    { t: 'circle', fill: 'fg', cx: .04, cy: .33, r: .07 }, { t: 'circle', fill: 'fg', cx: .5, cy: .2, r: .08 }, { t: 'circle', fill: 'fg', cx: .96, cy: .33, r: .07 },
+    { t: 'circle', fill: 'bg', cx: .5, cy: .76, r: .07 }
+  ] },
+  platte: { name: 'Schallplatte', cat: 'Oldies (50er–70er)', ops: [
+    { t: 'circle', fill: 'fg', cx: .5, cy: .62, r: .5 },
+    { t: 'circle', stroke: 'bg', w: .035, cx: .5, cy: .62, r: .37 },
+    { t: 'circle', fill: 'bg', cx: .5, cy: .62, r: .17 },
+    { t: 'circle', fill: 'fg', cx: .5, cy: .62, r: .05 }
+  ] },
+  kassette: { name: 'Kassette', cat: '80er & 90er', ops: [
+    { t: 'rect', fill: 'fg', x: 0, y: .3, w: 1, h: .66, r: .08 },
+    { t: 'rect', fill: 'bg', x: .14, y: .42, w: .72, h: .24, r: .05 },
+    { t: 'circle', fill: 'fg', cx: .33, cy: .54, r: .075 }, { t: 'circle', fill: 'fg', cx: .67, cy: .54, r: .075 },
+    poly([[.24, .96], [.31, .8], [.69, .8], [.76, .96]], 'bg')
+  ] },
+  mikrofon: { name: 'Mikrofon', cat: 'Hip-Hop & Rap', ops: [
+    { t: 'rect', fill: 'fg', x: .31, y: .02, w: .38, h: .62, r: .19 },
+    { t: 'line', stroke: 'bg', w: .04, x1: .31, y1: .25, x2: .69, y2: .25 },
+    { t: 'line', stroke: 'bg', w: .04, x1: .31, y1: .38, x2: .69, y2: .38 },
+    { t: 'path', stroke: 'fg', w: .08, d: [['M', .16, .44], ['C', .16, .92, .84, .92, .84, .44]] },
+    { t: 'line', stroke: 'fg', w: .08, x1: .5, y1: .8, x2: .5, y2: 1.04 },
+    { t: 'line', stroke: 'fg', w: .09, x1: .28, y1: 1.08, x2: .72, y2: 1.08 }
+  ] },
+  palme: { name: 'Palme', cat: 'Sommerhits', ops: [
+    { t: 'path', stroke: 'fg', w: .09, d: [['M', .46, 1.16], ['C', .52, .9, .5, .68, .53, .45]] },
+    { t: 'path', fill: 'fg', d: [['M', .53, .43], ['C', .36, .25, .15, .28, .01, .47], ['C', .2, .38, .36, .38, .53, .43], ['Z']] },
+    { t: 'path', fill: 'fg', d: [['M', .53, .43], ['C', .7, .25, .9, .28, .99, .5], ['C', .8, .38, .66, .38, .53, .43], ['Z']] },
+    { t: 'path', fill: 'fg', d: [['M', .53, .43], ['C', .46, .2, .3, .08, .12, .1], ['C', .3, .18, .42, .3, .53, .43], ['Z']] },
+    { t: 'path', fill: 'fg', d: [['M', .53, .43], ['C', .6, .2, .76, .06, .92, .1], ['C', .74, .18, .62, .3, .53, .43], ['Z']] },
+    { t: 'circle', fill: 'fg', cx: .45, cy: .5, r: .06 }, { t: 'circle', fill: 'fg', cx: .6, cy: .51, r: .06 }
+  ] },
+  tanne: { name: 'Tannenbaum', cat: 'Weihnachten', ops: [
+    poly([[.5, .02], [.2, .38], [.8, .38]]),
+    poly([[.5, .2], [.1, .66], [.9, .66]]),
+    poly([[.5, .44], [0, .96], [1, .96]]),
+    { t: 'rect', fill: 'fg', x: .4, y: .94, w: .2, h: .2, r: .02 }
+  ] },
+  disco: { name: 'Diskokugel', cat: 'Disco & Party', ops: [
+    { t: 'line', stroke: 'fg', w: .05, x1: .5, y1: 0, x2: .5, y2: .25 },
+    { t: 'circle', fill: 'fg', cx: .5, cy: .69, r: .46 },
+    ...[.47, .69, .91].map(y => { const dx = Math.sqrt(.46 * .46 - (y - .69) ** 2); return { t: 'line', stroke: 'bg', w: .035, x1: .5 - dx, y1: y, x2: .5 + dx, y2: y }; }),
+    ...[.3, .5, .7].map(x => { const dy = Math.sqrt(.46 * .46 - (x - .5) ** 2); return { t: 'line', stroke: 'bg', w: .035, x1: x, y1: .69 - dy, x2: x, y2: .69 + dy }; })
+  ] },
+  sprechblase: { name: 'Sprechblase „DE“', cat: 'Deutschsprachig', ops: [
+    { t: 'rect', fill: 'fg', x: 0, y: .14, w: 1, h: .72, r: .2 },
+    poly([[.2, .8], [.48, .8], [.12, 1.1]]),
+    { t: 'text', fill: 'bg', x: .5, y: .51, s: .42, txt: 'DE' }
+  ] },
+  note: { name: 'Musiknote', cat: 'Gemischt / Sonstiges', ops: [
+    { t: 'path', fill: 'fg', d: [['M', .38, .08], ['L', .92, 0], ['L', .92, .2], ['L', .46, .27], ['Z']] },
+    { t: 'line', stroke: 'fg', w: .08, x1: .42, y1: .14, x2: .42, y2: .92 },
+    { t: 'line', stroke: 'fg', w: .08, x1: .88, y1: .06, x2: .88, y2: .8 },
+    { t: 'circle', fill: 'fg', cx: .27, cy: .94, r: .17 },
+    { t: 'circle', fill: 'fg', cx: .73, cy: .82, r: .17 }
+  ] }
+};
+
+/* Symbol als SVG (für die Auswahl in der App) */
+function iconSVG(key, fg = 'currentColor', bg = 'var(--card)') {
+  const ic = ICONS[key]; if (!ic) return '';
+  const col = c => c === 'bg' ? bg : fg;
+  const body = ic.ops.map(o => {
+    const paint = o.fill ? `style="fill:${col(o.fill)}"` : `style="fill:none;stroke:${col(o.stroke)};stroke-width:${o.w};stroke-linecap:round"`;
+    if (o.t === 'path') return `<path ${paint} d="${o.d.map(c => c[0] + (c.length > 1 ? ' ' + c.slice(1).map(n => +n.toFixed(4)).join(' ') : '')).join(' ')}"/>`;
+    if (o.t === 'circle') return `<circle ${paint} cx="${o.cx}" cy="${o.cy}" r="${o.r}"/>`;
+    if (o.t === 'rect') return `<rect ${paint} x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}" rx="${o.r || 0}"/>`;
+    if (o.t === 'line') return `<line ${paint} x1="${o.x1}" y1="${o.y1}" x2="${o.x2}" y2="${o.y2}"/>`;
+    if (o.t === 'text') return `<text x="${o.x}" y="${o.y}" style="fill:${col(o.fill)}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="${o.s}" text-anchor="middle" dominant-baseline="central">${o.txt}</text>`;
+    return '';
+  }).join('');
+  return `<svg viewBox="-0.08 -0.08 1.16 1.36" aria-hidden="true">${body}</svg>`;
+}
+
+/* Symbol ins PDF zeichnen: (x,y) = linke obere Ecke, h = Höhe in mm */
+function drawIcon(doc, key, x, y, h, fg, bg) {
+  const ic = ICONS[key]; if (!ic) return;
+  const k = h / 1.2, X = v => x + v * k, Y = v => y + v * k;
+  const col = c => c === 'bg' ? bg : fg;
+  doc.setLineCap('round'); doc.setLineJoin('round');
+  for (const o of ic.ops) {
+    if (o.fill) { doc.setFillColor(...col(o.fill)); doc.setDrawColor(...col(o.fill)); doc.setLineWidth(0.05); }
+    else { doc.setDrawColor(...col(o.stroke)); doc.setLineWidth(o.w * k); }
+    const style = o.fill ? 'F' : 'S';
+    if (o.t === 'path') {
+      let cx = X(o.d[0][1]), cy = Y(o.d[0][2]); const sx = cx, sy = cy, segs = []; let closed = false;
+      for (const c of o.d.slice(1)) {
+        if (c[0] === 'L') { const nx = X(c[1]), ny = Y(c[2]); segs.push([nx - cx, ny - cy]); cx = nx; cy = ny; }
+        else if (c[0] === 'C') { const p = [X(c[1]), Y(c[2]), X(c[3]), Y(c[4]), X(c[5]), Y(c[6])]; segs.push([p[0] - cx, p[1] - cy, p[2] - cx, p[3] - cy, p[4] - cx, p[5] - cy]); cx = p[4]; cy = p[5]; }
+        else if (c[0] === 'Z') closed = true;
+      }
+      doc.lines(segs, sx, sy, [1, 1], style, closed);
+    } else if (o.t === 'circle') doc.circle(X(o.cx), Y(o.cy), o.r * k, style);
+    else if (o.t === 'rect') doc.roundedRect(X(o.x), Y(o.y), o.w * k, o.h * k, (o.r || 0) * k, (o.r || 0) * k, style);
+    else if (o.t === 'line') doc.line(X(o.x1), Y(o.y1), X(o.x2), Y(o.y2));
+    else if (o.t === 'text') {
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(o.s * k / PT); doc.setTextColor(...col(o.fill));
+      doc.text(o.txt, X(o.x), Y(o.y), { align: 'center', baseline: 'middle' });
+    }
+  }
+  doc.setLineCap('butt'); doc.setLineJoin('miter');
+}
+
+function drawFront(doc, s, x, y, S, styleName, perfMode, iconKey) {
   const col = decadeColor(s.year);
   const colored = styleName === 'color';
   if (colored) { doc.setFillColor(...col); doc.rect(x, y, S, S, 'F'); }
   else { doc.setDrawColor(...col); doc.setLineWidth(1.4); doc.roundedRect(x + 3, y + 3, S - 6, S - 6, 3, 3, 'S'); }
+  // Editions-Symbol oben rechts (zum Auseinandersortieren gemischter Stapel)
+  if (iconKey && ICONS[iconKey]) {
+    if (colored) drawIcon(doc, iconKey, x + S - 4 - 5, y + 3.4, 6, [255, 255, 255], col);
+    else drawIcon(doc, iconKey, x + S - 5.5 - 4.6, y + 5, 5.5, col, [255, 255, 255]);
+  }
   const fg = colored ? [255, 255, 255] : [25, 20, 35];
   const cx = x + S / 2, maxW = S - 13;
   // Interpret oben
@@ -820,12 +966,12 @@ function drawFront(doc, s, x, y, S, styleName, perfMode) {
   const startT = y + S - 9 - t.lines.length * lhT;
   t.lines.forEach((l, i) => doc.text(l, cx, startT + i * lhT, { align: 'center', baseline: 'top' }));
 }
-function drawBack(doc, s, x, y, S, edition) {
+function drawBack(doc, s, x, y, S) {
   const code = encodeCard(s.id, s.year, s.ci || 0);
   const url = APP_URL + '#t=' + s.id + (code ? '.' + code : '');
   const qr = qrcode(0, 'M'); qr.addData(url); qr.make();
-  const n = qr.getModuleCount(), size = 42, cell = size / n;
-  const qx = x + (S - size) / 2, qy = y + (S - size) / 2 - 3;
+  const n = qr.getModuleCount(), size = 46, cell = size / n;
+  const qx = x + (S - size) / 2, qy = y + (S - size) / 2;
   doc.setFillColor(0, 0, 0);
   for (let r = 0; r < n; r++) {
     let c = 0;
@@ -837,8 +983,6 @@ function drawBack(doc, s, x, y, S, edition) {
       } else c++;
     }
   }
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(120, 110, 140);
-  doc.text(pdfSafe(edition || 'Schmollster').toUpperCase(), x + S / 2, y + S - 7, { align: 'center', baseline: 'middle', charSpace: 0.4 });
 }
 function cutMarks(doc, MX, MY, COLS, ROWS, S) {
   doc.setDrawColor(150, 150, 150); doc.setLineWidth(0.2);
@@ -871,7 +1015,7 @@ async function makePdf() {
     for (let p = 0; p < pages; p++) {
       const chunk = cards.slice(p * PER, (p + 1) * PER);
       if (p > 0) doc.addPage();
-      chunk.forEach((s, i) => drawFront(doc, s, MX + (i % COLS) * S, MY + Math.floor(i / COLS) * S, S, set.style, set.perf || 'paren'));
+      chunk.forEach((s, i) => drawFront(doc, s, MX + (i % COLS) * S, MY + Math.floor(i / COLS) * S, S, set.style, set.perf || 'paren', set.icon || ''));
       if (set.style === 'color') { // dünne Trennlinien zwischen farbigen Karten
         doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.3);
         for (let c = 1; c < COLS; c++) doc.line(MX + c * S, MY, MX + c * S, MY + ROWS * S);
@@ -882,12 +1026,12 @@ async function makePdf() {
       doc.text(`Vorderseiten · Blatt ${p + 1}/${pages}`, 105, 290, { align: 'center' });
       doc.addPage();
       // Rückseite gespiegelt (an der langen Kante wenden)
-      chunk.forEach((s, i) => drawBack(doc, s, MX + (COLS - 1 - (i % COLS)) * S, MY + Math.floor(i / COLS) * S, S, set.edition));
+      chunk.forEach((s, i) => drawBack(doc, s, MX + (COLS - 1 - (i % COLS)) * S, MY + Math.floor(i / COLS) * S, S));
       cutMarks(doc, MX, MY, COLS, ROWS, S);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(150, 150, 150);
       doc.text(`Rückseiten · Blatt ${p + 1}/${pages}`, 105, 290, { align: 'center' });
     }
-    doc.save(fileName(set.name) + '.pdf');
+    doc.save(fileName(set.edition || set.name) + '.pdf');
     toast('PDF erstellt ✓');
   } catch (e) { console.error(e); $('pdf-err').textContent = 'Fehler beim Erstellen: ' + e.message; }
   finally { btn.disabled = false; btn.textContent = 'PDF erstellen'; }
@@ -1127,6 +1271,10 @@ function wire() {
   $('edition').onchange = () => { const s = getSet(); s.edition = $('edition').value.trim(); saveSet(s); };
   $('style').onchange = () => { const s = getSet(); s.style = $('style').value; saveSet(s); };
   $('perf').onchange = () => { const s = getSet(); s.perf = $('perf').value; saveSet(s); };
+  $('icon-grid').addEventListener('click', e => {
+    const b = e.target.closest('.icon-opt'); if (!b) return;
+    const s = getSet(); s.icon = b.dataset.k; saveSet(s); renderIconGrid(s.icon);
+  });
   $('btn-scan').onclick = startScan;
   $('btn-scan-cancel').onclick = stopScan;
   $('btn-toggle').onclick = togglePlay;
